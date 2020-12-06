@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://unpkg.com/vue/dist/vue.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    </head>
+
+    <body>
+        <div>Welcomt to Book Management System: {{username}}</div>
+        <div id="book">
+            <div>查找图书
+                <p><input v-model="book_name" placeholder="书名"></p>
+                <p><input v-model="book_author" placeholder="作者名"></p>
+                <p><input v-model="book_publisher" placeholder="出版社名"></p>
+                <p><button type="button" @click="search_book()">查找</button></p>
+            </div>
+            <div v-if="statuscode==1">
+                <li v-for="book in booklist">
+                    书号：{[ book.bookid ]}
+                    书名：{[ book.bookname ]}
+                    作者：{[ book.author ]}
+                    出版社：{[ book.publisher ]}
+                    出版日期：{[ book.publishdate ]}
+                    价格：{[ book.price ]}
+                    库存：{[ book.storage ]}
+                </li>
+            </div>
+        </div>
+    </body>
+
+    <script>
+        new Vue({
+            el: "#book",
+            // 如果不可避免的在同一个页面里既有 django 渲染又有 vue 渲染的部分，可采用 vue 的 delimiters 分隔符解决
+            delimiters: ["{[", "]}"],
+            data: {
+                book_name: '',
+                book_author: '',
+                book_publisher: '',
+                statuscode: 0,
+                booklist: []
+            },
+            methods: {
+                search_book() {
+                    axios.post('http://127.0.0.1:5000/book',{
+                        'bookname': this.book_name,
+                        'author': this.book_author,
+                        'publisher': this.book_publisher
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['books'])
+                        this.booklist=Response['data']['books']
+                        if(Response['data']['status']=='success'){
+                            this.statuscode=1
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                }
+            }
+        })
+    </script>
+  
+</html>
