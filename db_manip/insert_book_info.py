@@ -30,7 +30,6 @@ for i in range(book_sum):
         storage=random.randint(1,10)
         sql=('''insert into books (bookname, author, publisher, publishdate, price, storage)
                 values ('%s','%s','%s','%s',%f,%d)''' % (book_name, author, publisher, publish_date, price, storage) )
-        print(sql)
         try:
             cursor.execute(sql)
             success+=1

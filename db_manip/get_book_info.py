@@ -69,7 +69,7 @@ class dangdang_spider():
             self.save_data(msg_list)
             print("Successfully Get Page",i)
             sleep(2)
-            if(i==100):
+            if(i==500):
                 return 
 
 if __name__ == '__main__':

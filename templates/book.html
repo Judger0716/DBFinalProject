@@ -2,20 +2,118 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <script src="https://unpkg.com/vue/dist/vue.js"></script>
-        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
+        <!-- 引入样式 -->
+        <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
+        <!-- 引入组件库 -->
+        <script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
+        <script src="https://unpkg.com/axios@0.21.0/dist/axios.min.js"></script>
     </head>
 
     <body>
-        <div>Welcomt to Book Management System: {{username}}</div>
+        <div><h1>欢迎进入图书管理系统：</h1><h2 id="cur_un">{{username}}</h2></div>
+
+        <!-- 修改账户信息 -->
+        <div id="account">
+            <el-button type="info" @click="dialogFormVisible = true">修改账户信息</el-button>
+            <el-dialog title="修改账户信息" :visible.sync="dialogFormVisible">
+                <el-form :model="form">
+                    <el-form-item label="新的用户名" :label-width="formLabelWidth">
+                        <el-input v-model="form.after_username" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="新的密码" :label-width="formLabelWidth">
+                        <el-input v-model="form.after_password" show-password></el-input>
+                    </el-form-item>
+                    <el-form-item label="输入原有密码确认" :label-width="formLabelWidth">
+                        <el-input v-model="form.before_password" show-password></el-input>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="dialogFormVisible = false;change_userinfo()">确 定</el-button>
+                </div>
+            </el-dialog>
+        </div>
+
+        <!-- BMS主体 -->
         <div id="book">
-            <div>查找图书
-                <p><input v-model="book_name" placeholder="书名"></p>
-                <p><input v-model="book_author" placeholder="作者名"></p>
-                <p><input v-model="book_publisher" placeholder="出版社名"></p>
-                <p><button type="button" @click="search_book()">查找</button></p>
+            
+            <!-- 图书查找 -->
+            <el-button type="info" @click="search_book()" round>图 书 查 找</el-button>
+
+            <!-- 我的借阅 -->
+            <el-button type="info" @click="get_borrow_list()" round>我 的 借 阅</el-button>
+            <el-dialog title="您的借阅信息" :visible.sync="bldialogVisible" width="80%"><div>您的信誉分：{[credit]}</div>
+                <el-table :data="borrowlist" style="width: 100%">
+                    <el-table-column property="bookid" label="书号" width="100"></el-table-column>
+                    <el-table-column property="bookname" label="书名" width="350"></el-table-column>
+                    <el-table-column property="startdate" label="起始日期" width="350"></el-table-column>
+                    <el-table-column property="enddate" label="终止日期" width="350"></el-table-column>
+                    <el-table-column property="isexpired" label="是否逾期" width="50"></el-table-column>
+                    <el-table-column v-if="borrowlist.isexpired>0" label="是否逾期">已逾期，请尽快归还</el-table-column>
+                    <el-table-column v-else label="是否逾期">暂未逾期</el-table-column>
+                    <!-- 暂未开始借阅的才显示此按钮 -->
+                    <el-table-column>
+                        <template slot-scope="scope">
+                            <el-button type="text" @click="recall_borrow(scope.row)">取消借阅此书</el-button>
+                          </template>                          
+                    </el-table-column>
+                </el-table>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="bldialogVisible=false">确 定</el-button>
+                </span>
+            </el-dialog>
+
+            <!-- 我的购买 -->
+            <el-button type="info" @click="get_buy_list()" round>我 的 购 买</el-button>
+
+            <!-- 图书查找表单 -->
+            <div>
+                <el-input v-model="book_name" placeholder="书名"></el-input>
+                <el-input v-model="book_author" placeholder="作者名"></el-input>
+                <el-input v-model="book_publisher" placeholder="出版社名"></el-input>
             </div>
-            <div v-if="statuscode==1">
+
+            <br>
+            <!-- 查找结果 -->
+            <div v-if="statuscode>=1">
+                <el-button type="info" @click="top_list()" round>畅 销 榜</el-button>
+                <el-table :data="booklist" style="width: 100%" :row-class-name="book">
+                    <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
+                    <el-table-column prop="bookname" label="书名" width="350"></el-table-column>
+                    <el-table-column prop="author" label="作者" width="350"></el-table-column>
+                    <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
+                    <el-table-column prop="publishdate" label="出版日期" width="300"></el-table-column>
+                    <el-table-column prop="price" label="价格" width="80"></el-table-column>
+                    <el-table-column prop="storage" label="库存" width="50"></el-table-column>
+                    <el-table-column>
+                        <template slot-scope="scope">
+                            <el-button type="text" @click="borrow_book(scope.row)">借阅</el-button>
+                                <el-dialog
+                                    title="提示"
+                                    :visible.sync="dialogVisible"
+                                    width="50%"
+                                    center>
+                                    <span center>请选择借阅的起止日期</span>
+                                        <div class="block" center>
+                                            <span class="demonstration">点击“确定”完成借阅</span><br>
+                                            <el-date-picker
+                                                v-model="borrow_date"
+                                                type="daterange"
+                                                range-separator="至"
+                                                start-placeholder="开始日期"
+                                                end-placeholder="结束日期">
+                                            </el-date-picker>
+                                        </div>
+                                        <span slot="footer" class="dialog-footer" center>
+                                            <el-button @click="dialogVisible = false">取 消</el-button>
+                                            <el-button type="primary" @click="dialogVisible = false;commit_borrow()">确 定</el-button>
+                                        </span>
+                                </el-dialog>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            <!--
                 <li v-for="book in booklist">
                     书号：{[ book.bookid ]}
                     书名：{[ book.bookname ]}
@@ -24,32 +122,118 @@
                     出版日期：{[ book.publishdate ]}
                     价格：{[ book.price ]}
                     库存：{[ book.storage ]}
+                    <button type="button" @click="borrow_book(book);dialogVisible=true">借阅</button>
+                    <div v-if="statuscode==2">
+                        <el-dialog
+                            title="提示"
+                            :visible.sync="dialogVisible"
+                            width="60%"
+                            center>
+                            <span>请选择借阅的起止日期</span>
+                                <div class="block">
+                                    <span class="demonstration">点击“确定”完成借阅</span><br>
+                                    <el-date-picker
+                                        v-model="borrow_date"
+                                        type="daterange"
+                                        range-separator="至"
+                                        start-placeholder="开始日期"
+                                        end-placeholder="结束日期">
+                                    </el-date-picker>
+                                </div>
+                                <span slot="footer" class="dialog-footer">
+                                    <el-button @click="dialogVisible = false">取 消</el-button>
+                                    <el-button type="primary" @click="dialogVisible = false;commit_borrow()">确 定</el-button>
+                                </span>
+                        </el-dialog>
+                    </div>
                 </li>
+            -->
+
+
             </div>
         </div>
     </body>
 
     <script>
-        new Vue({
+        var account = new Vue({
+            el: "#account",
+            data: {
+                form:{
+                    "before_username": document.getElementById("cur_un").innerHTML,
+                    "before_password": '',
+                    "after_username": '',
+                    "after_password": ''
+                },
+                dialogFormVisible: false,
+                formLabelWidth: '120px'
+            },
+            methods: {
+                change_userinfo() {
+                    axios.post('http://127.0.0.1:5000/chginfo',{
+                        "before_username": this.form['before_username'],
+                        "before_password": this.form['before_password'],
+                        "after_username": this.form['after_username'],
+                        "after_password": this.form['after_password'],
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '账户信息修改成功，请重新登录',
+                                type: 'success'
+                            });
+                            window.location.href='../login';
+                        }
+                        else if(Response['data']['status']=='duplicated_username'){
+                            this.$notify.error({
+                                title: '错误',
+                                message: '用户名重复'
+                            });
+                        }
+                        else if(Response['data']['status']=='incorrect_password'){
+                            this.$notify.error({
+                                title: '错误',
+                                message: '密码有误'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                }
+            }
+        });
+
+
+        var bms = new Vue({
             el: "#book",
             // 如果不可避免的在同一个页面里既有 django 渲染又有 vue 渲染的部分，可采用 vue 的 delimiters 分隔符解决
             delimiters: ["{[", "]}"],
             data: {
+                username: document.getElementById("cur_un").innerHTML,
+                credit: 100,
                 book_name: '',
                 book_author: '',
                 book_publisher: '',
-                statuscode: 0,
-                booklist: []
+                statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍 3-获得借阅记录
+                booklist: [],
+                borrow_book_id: 0,
+                borrow_date: '',
+                borrowlist: [],
+                dialogVisible: false,
+                bldialogVisible: false
             },
             methods: {
+                // 查询书籍
                 search_book() {
                     axios.post('http://127.0.0.1:5000/book',{
                         'bookname': this.book_name,
                         'author': this.book_author,
-                        'publisher': this.book_publisher
+                        'publisher': this.book_publisher,
                     })
                     .then(Response => {
-                        console.log(Response['data']['books'])
+                        console.log(Response['data']['status'])
                         this.booklist=Response['data']['books']
                         if(Response['data']['status']=='success'){
                             this.statuscode=1
@@ -58,9 +242,150 @@
                     .catch(function (error){
                         console.log(error);
                     })
+                },
+                // 请求借阅图书，服务器判断库存
+                borrow_book(book) {
+                    console.log(book)
+                    axios.post('http://127.0.0.1:5000/borrow',{
+                        'message': 'request_borrow',
+                        'bookid': book.bookid,
+                        'username': this.username,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='accept'){
+                            this.borrow_book_id=book.bookid
+                            this.dialogVisible=true
+                        }
+                        else if(Response['data']['status']=='no_storage'){
+                            this.$notify.error({
+                                title: '错误',
+                                message: '该书库存为零，不可借阅'
+                            });
+                        }
+                        else if(Response['data']['status']=='maximum_borrow_num'){
+                            this.$notify.error({
+                                title: '错误',
+                                message: '您已达到借阅书目上限，不可借阅'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 确认借阅，服务器更新库存，记录借阅
+                commit_borrow() {
+                    axios.post('http://127.0.0.1:5000/borrow',{
+                        'message': 'commit_borrow',
+                        'bookid': this.borrow_book_id,
+                        'username': this.username,
+                        'startdate': this.borrow_date[0],
+                        'enddate': this.borrow_date[1],
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        this.credit=Response['data']['credit']
+                        if(Response['data']['status']=='borrow_successfully'){
+                            this.$notify({
+                                title: '成功',
+                                message: '借阅已成功，请及时取走书籍',
+                                type: 'success'
+                            });
+                            this.borrow_book_id=0
+                        }
+                        else if(Response['data']['status']=='low_credit'){
+                            this.$notify({
+                                title: '失败',
+                                message: '信誉分过低，请提高信誉分',
+                            });
+                            this.borrow_book_id=0
+                        }
+                        else if(Response['data']['status']=='already_borrowed'){
+                            this.$notify({
+                                title: '失败',
+                                message: '您已经借阅过本书，不能再次借阅',
+                            });
+                            this.borrow_book_id=0
+                        }
+                        else if(Response['data']['status']=='borrow_failed'){
+                            this.$notify.error({
+                                title: '失败',
+                                message: '借阅失败，请重新尝试'
+                            });
+                            this.borrow_book_id=0
+                        }
+                        else if(Response['data']['status']=='no storage'){
+                            this.$notify.error({
+                                title: '失败',
+                                message: '该书暂无库存，请刷新信息'
+                            });
+                            this.borrow_book_id=0
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                get_borrow_list() {
+                    axios.post('http://127.0.0.1:5000/borrow',{
+                        'message': 'get_borrow_list',
+                        'username': this.username,
+                    })
+                    .then(Response => {
+                        this.credit=Response['data']['credit']
+                        console.log(Response['data']['status'])
+                        console.log(Response['data']['bl'])
+                        if(Response['data']['status']=='get_borrow_list_successfully'){
+                            this.borrowlist=Response['data']['bl']
+                            this.bldialogVisible=true;
+                        }
+                        else{
+                            this.$notify.error({
+                                title: '失败',
+                                message: '获取借阅列表失败'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                recall_borrow(book){
+                    this.$confirm('将取消借阅本书?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        axios.post('http://127.0.0.1:5000/borrow',{
+                            'message': 'recall_borrow',
+                            'bookid' : book.bookid,
+                            'username': this.username,
+                        })
+                        .then(Response => {
+                            console.log(Response['data']['status']);
+                            if(Response['data']['status']=='recall_successfully'){
+                                this.$message({
+                                    type: 'success',
+                                    message: '取消借阅成功!'
+                                });
+                            }
+                            else{
+                                this.$message({
+                                    type: 'error',
+                                    message: '无此借阅记录！'
+                                });
+                            }
+                        })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });          
+                    });
                 }
             }
-        })
+        });
     </script>
   
 </html>
