@@ -41,8 +41,14 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 
 ## Reference Material
 
-[Flask和Vue.js构建全栈单页面web应用【通过Flask开发RESTful API】](https://zhuanlan.zhihu.com/p/76588212)
+[](https://zhuanlan.zhihu.com/p/76588212)
 
-[Element-UI中文文档](https://element.eleme.cn/#/zh-CN/component/input)
+[](https://element.eleme.cn/#/zh-CN/component/input)
 
-[Vue.js菜鸟教程](https://www.runoob.com/vue2/vuejs-ajax-axios.html)
+[](https://www.runoob.com/vue2/vuejs-ajax-axios.html)
+
+[](https://www.runoob.com/w3cnote/mysql-stored-procedure.html)
+
+[](https://www.qikegu.com/docs/3263)
+
+[](https://www.cnblogs.com/readygood/p/9853797.html)

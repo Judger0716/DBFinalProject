@@ -2,11 +2,449 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
+        <!-- 引入样式 -->
+        <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
+        <!-- 引入组件库 -->
+        <script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
+        <script src="https://unpkg.com/axios@0.21.0/dist/axios.min.js"></script>
     </head>
 
     <body>
-        <div>ADMIN INTERFACE!
+        <div><h1>欢迎进入图书管理系统：ADMIN</h1>
+        <form action="/" method="get">
+            <p><button type="submit">退出登录</button></p>
+        </form>
+
+        <!-- BMS主体 -->
+        <div id="book">
+
+            <el-tabs type="border-card" @tab-click="handleClick">
+                <!-- 图书查找 -->
+                <el-tab-pane label="图书管理">
+                    
+                    <el-button type="info" @click="search_book()" round>图 书 查 找</el-button>
+                    <!-- 图书查找表单 -->
+                    <div>
+                        <el-input v-model="book_name" placeholder="书名"></el-input>
+                        <el-input v-model="book_author" placeholder="作者名"></el-input>
+                        <el-input v-model="book_publisher" placeholder="出版社名"></el-input>
+                    </div>
+                    <br>
+                    <!-- 查找结果 -->
+                    <div v-if="statuscode>=1">
+                        <el-table :data="booklist" style="width: 100%" :row-class-name="book">
+                            <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
+                            <el-table-column prop="bookname" label="书名" width="350"></el-table-column>
+                            <el-table-column prop="author" label="作者" width="350"></el-table-column>
+                            <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
+                            <el-table-column prop="publishdate" label="出版日期" width="300"></el-table-column>
+                            <el-table-column prop="price" label="价格" width="80"></el-table-column>
+                            <el-table-column prop="storage" label="库存" width="50"></el-table-column>
+                            <!-- 管理员控制进货 -->
+                            <el-table-column>
+                                <template slot-scope="scope">
+                                    <el-button type="text" @click="stockdialogVisible = true;get_stock_bookid(scope.row)">进货</el-button>
+                                        <el-dialog title="图书进货表" :visible.sync="stockdialogVisible" width="30%">
+                                            <el-input v-model="stock_num"></el-input>
+                                            <div slot="footer" class="dialog-footer">
+                                                <el-button @click="stockdialogVisible = false">取 消</el-button>
+                                                <el-button type="primary" @click="stockdialogVisible = false;stock_book()">确 定</el-button>
+                                            </div>
+                                        </el-dialog>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </el-tab-pane>
+                <!-- 借还书管理 -->
+                <el-tab-pane label="借还书管理" name='borrow'>
+                    <template>
+                        <el-table
+                          :data="allusr_borrowlist.filter(data => !search || data.bookname.toLowerCase().includes(search.toLowerCase()))"
+                          style="width: 100%">
+                            <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
+                            <el-table-column label="用户名" prop="username" width="200"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="350"></el-table-column>
+                            <el-table-column label="起始日期" prop="startdate" width="350"></el-table-column>
+                            <el-table-column label="终止日期" prop="enddate" width="350"></el-table-column>
+                            <el-table-column label="是否逾期" prop="isexpired" width="50"></el-table-column>
+                            <el-table-column label="是否进行逾期统计" prop="iscalculated"></el-table-column>
+                            <el-table-column align="right">
+                                <template slot="header" slot-scope="scope">
+                                    <el-button size="mini" @click="get_allusr_borrowlist()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索"/>
+                                </template>
+                                <template slot-scope="scope">
+                                    <el-button
+                                        size="mini"
+                                        @click="renew_borrow(scope.row)">续借</el-button>
+                                    <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="return_book(scope.row)">归还</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template>                      
+                </el-tab-pane>
+
+                <el-tab-pane label="销售管理">
+                    <el-button size="mini" @click="get_buylist()">销售记录</el-button><el-button size="mini" @click="get_topsale()">畅销榜</el-button>    <el-popover
+                        placement="top-start"
+                        width="100"
+                        trigger="click">
+                        <span>总销售额：{[all_profit]}￥</span>
+                        <el-button size="mini" slot="reference" @click="get_profit()">销售额统计</el-button>
+                    </el-popover>
+                    <template>
+                        <el-table
+                          :data="buylist.filter(data => !search || data.bookname.toLowerCase().includes(search.toLowerCase()))"
+                          style="width: 100%">
+                            <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
+                            <el-table-column label="用户名" prop="username" width="200"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="350"></el-table-column>
+                            <el-table-column label="购买日期" prop="buydate" width="350"></el-table-column>
+                            <el-table-column label="售价" prop="price" width="250"></el-table-column>
+                            <el-table-column align="right">
+                                <template slot="header" slot-scope="scope">
+                                    <el-button size="mini" @click="get_buylist()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索"/>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template> 
+                        <el-dialog title="图书畅销榜" :visible.sync="top_sale_visible" >
+                            <el-table :data="topsale">
+                                <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
+                                <el-table-column prop="bookname" label="书名" width="350"></el-table-column>
+                                <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
+                                <el-table-column prop="price" label="价格" width="80"></el-table-column>
+                                <el-table-column prop="storage" label="库存" width="50"></el-table-column>
+                                <el-table-column prop="readed" label="阅读量" width="50"></el-table-column>
+                                <el-table-column prop="purchased" label="购买量"></el-table-column>
+                            </el-table>
+                        </el-dialog>
+                </el-tab-pane>
+
+                <el-tab-pane label="账户管理" name='user'>
+                    <template>
+                        <el-table
+                          :data="usrlist.filter(data => !search || data.username.toLowerCase().includes(search.toLowerCase()))"
+                          style="width: 100%">
+                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
+                            <el-table-column label="用户名" prop="username" width="200"></el-table-column>
+                            <el-table-column label="密码" prop="password" width="300"></el-table-column>
+                            <el-table-column label="信誉分" prop="credit" width="200"></el-table-column>
+                            <el-table-column label="余额" prop="balance" width="200"></el-table-column>
+                            <el-table-column label="已借阅图书数目" prop="borrownum" width="200"></el-table-column>
+                            <el-table-column label="等级" prop="level" width="200"></el-table-column>
+                            <el-table-column align="right">
+                                <template slot="header" slot-scope="scope">
+                                    <el-button size="mini" @click="get_allusr()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入用户名关键字搜索"/>
+                                </template>
+                                <template slot-scope="scope">
+                                    <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="update_usr(scope.row)">更新用户信息</el-button>
+                                    <el-dialog title="用户信息表" :visible.sync="update_usr_visible" center>
+                                        <h3>用户信誉分：</h3>
+                                        <el-input v-model="cur_usr.credit" placeholder="用户信誉分" auto-complete="on"></el-input> 
+                                        <h3>用户余额：</h3>
+                                        <el-input v-model="cur_usr.balance" placeholder="用户余额" auto-complete="on"></el-input>
+                                        <h3>用户等级(0为用户，1为管理员)：</h3>
+                                        <el-input v-model="cur_usr.level" placeholder="用户等级" auto-complete="on"></el-input>
+                                        <span slot="footer" class="dialog-footer" center>
+                                            <el-button type="primary" @click="update_usr_visible = false;commit_update()">确 定</el-button>
+                                        </span>
+                                    </el-dialog> 
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template> 
+                </el-tab-pane>
+            </el-tabs>
         </div>
     </body>
+
+    <script>
+        var bms = new Vue({
+            el: "#book",
+            delimiters: ["{[", "]}"],
+            data: {
+                book_name: '',
+                book_author: '',
+                book_publisher: '',
+                statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍 3-获得借阅记录
+                booklist: [],
+                stock_num: 0,
+                stock_book_id: 0,
+                stockdialogVisible: false,
+                allusr_borrowlist: [],
+                search: '',
+                buylist: [],
+                topsale: [],
+                top_sale_visible: false,
+                all_profit: 0,
+                usrlist: [],
+                update_usr_visible: false, // 更新用户对话框
+                cur_usr: {
+                    'uid': 0,
+                    'credit': 0,
+                    'balance': 0,
+                    'level': 0,
+                },
+            },
+            methods: {
+                handleClick(tab, event) {
+                    console.log(tab, event);
+                    if(tab.name == 'borrow'){
+                        this.get_allusr_borrowlist()
+                    }
+                    else if(tab.name == 'user'){
+                        this.get_allusr()
+                    }
+                },
+                // 查询书籍
+                search_book() {
+                    axios.post('http://127.0.0.1:5000/book',{
+                        'bookname': this.book_name,
+                        'author': this.book_author,
+                        'publisher': this.book_publisher,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        this.booklist=Response['data']['books']
+                        if(Response['data']['status']=='success'){
+                            this.statuscode=1
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 获取当前书的id
+                get_stock_bookid(row) {
+                    console.log(row.bookid)
+                    this.stock_book_id=row.bookid
+                },
+                // 添加库存
+                stock_book() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'stock_book',
+                        'bookid': this.stock_book_id,
+                        'stock_num': this.stock_num,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.stock_book_id=0
+                            this.stock_num=0
+                            this.$notify({
+                                title: '成功',
+                                message: '库存更新成功',
+                                type: 'success'
+                            });
+                        }
+                        else{
+                            this.$notify({
+                                title: '失败',
+                                message: '库存更新失败',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 获得用户借阅列表
+                get_allusr_borrowlist() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'get_allusr_borrowlist',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.allusr_borrowlist=Response['data']['allusrbl']
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 续借书籍，固定续借一周
+                renew_borrow(row) {
+                    console.log(row)
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'renew_borrow',
+                        'bookid': row.bookid,
+                        'uid': row.uid,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '用户续借成功',
+                                type: 'success'
+                            });
+                        }
+                        else{
+                            this.$notify({
+                                title: '成功',
+                                message: '用户续借失败,请检查起始日期',
+                                type: 'success'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                return_book(row) {
+                    console.log(row)
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'return_book',
+                        'bookid': row.bookid,
+                        'uid': row.uid,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '用户还书成功',
+                                type: 'success'
+                            });
+                        }
+                        else{
+                            this.$notify({
+                                title: '成功',
+                                message: '用户还书失败',
+                                type: 'success'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                get_buylist() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'get_buylist',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.buylist=Response['data']['buylist']
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                get_topsale() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'get_topsale',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.topsale=Response['data']['topsale']
+                            this.top_sale_visible=true
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                get_profit() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'get_profit',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.all_profit=Response['data']['all_profit']
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                get_allusr() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'get_allusr',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.usrlist=Response['data']['allusr']
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                update_usr(row) {
+                    this.cur_usr['uid']=row.uid
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'update_usr',
+                        'uid': row.uid,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.update_usr_visible=true
+                            this.cur_usr['credit']=Response['data']['cur_usr']['credit']
+                            this.cur_usr['balance']=Response['data']['cur_usr']['balance']
+                            this.cur_usr['level']=Response['data']['cur_usr']['level']
+                            console.log(this.cur_usr)
+                        }
+                        else{
+                            this.$notify({
+                                title: '失败',
+                                message: '用户信息修改失败',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                commit_update() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'commit_update',
+                        'uid': this.cur_usr['uid'],
+                        'credit': this.cur_usr['credit'],
+                        'balance': this.cur_usr['balance'],
+                        'level': this.cur_usr['level'],
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '用户信息修改成功',
+                            });
+                        }
+                        else{
+                            this.$notify({
+                                title: '失败',
+                                message: '用户信息修改失败',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                }
+            }
+        });
+    </script>
   
 </html>
