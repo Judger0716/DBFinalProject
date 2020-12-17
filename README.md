@@ -72,3 +72,9 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 [Element-UI中文文档](https://element.eleme.cn/#/zh-CN/component/input)
 
 [Vue.js菜鸟教程](https://www.runoob.com/vue2/vue-tutorial.html)
+
+[MySQL 存储过程](https://www.runoob.com/w3cnote/mysql-stored-procedure.html)
+
+[Python MySQL教程](https://www.qikegu.com/docs/3263)
+
+[mysql.connector 事务总结](https://www.cnblogs.com/yaoyu126/p/6413638.html)
