@@ -37,7 +37,33 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 
 --Complete the update process of book resources and users' borrow lists, which will change correspondingly after user's operation.
 
+## 2020/12/17 Updates
 
+### The Front End
+
+--Allow users to check their buy list.
+
+--Allow users to make comments on certain books and view top 20 comment on that book.
+
+#### Add user interface for admin
+
+--Admin can view all basic information of books in the database and stock old or new books.
+
+--Admin can manage users' borrow list, deciding whether lengthen their borrowing period or not and deleting the borrow record when user return their books.
+
+--Admin can view all the orders of buying book and the sum of sale.
+
+--Admin can manage all users in the system by editing their credit, balance and level.
+
+### The Back End
+
+--Complete all the functions corresponding to the newly appended operation of users.
+
+--Use MySQL procedure to replace "insert", "update" and "delete" orders.
+
+--Add prevention of MySQL injection.
+
+--Divide all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
 
 ## Reference Material
 
