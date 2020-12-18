@@ -78,3 +78,5 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 [Python MySQL教程](https://www.qikegu.com/docs/3263)
 
 [mysql.connector 事务总结](https://www.cnblogs.com/yaoyu126/p/6413638.html)
+
+[第三篇 Python关于mysql的API--pymysql模块， mysql事务](https://www.cnblogs.com/victorm/p/9695876.html)
