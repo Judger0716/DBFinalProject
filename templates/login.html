@@ -2,17 +2,73 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <style>
+            .login{
+                position:fixed;
+                top: 0;
+                left: 0;
+                width:100%;
+                height:100%;
+                min-width: 1000px;
+                z-index:-10;
+                zoom: 1;
+                background-color: #fff;
+                background: url(static/login_bg.png);
+                background-repeat: no-repeat;
+                background-size: cover;
+                -webkit-background-size: cover;
+                -o-background-size: cover;
+                background-position: center 0;
+                text-align: center;
+            }
+            .form{
+                width: 400px;
+                height: 300px;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%,-50%);
+                text-align: center;
+                border-radius: 25px;
+                background-color: #fff;
+                opacity: 0.8; 
+                text-align: center;
+                vertical-align: middle;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            }
+            .input{
+                border-radius: 40px;
+            }
+            #welcome{
+                color: aliceblue;
+                font-size: 24px;
+                margin-top: 250px;
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: auto;
+                text-align: center;
+            }
+        </style>
     </head>
 
     <body>
-        <div id="info">Login Interface：
-            <form action="/login" method="post">
-                <p><input name="username"></p>
-                <p><input name="password" type="password"></p>
-                <p><button type="submit">登录</button></p>
-                <p><button type="button" onclick="window.location.href='regist'">注册</button></p>
-            </form>
-            <div>{{ msg }}</div>
+        <div class="login">
+            <div id="welcome">
+                <h1>欢迎进入图书管理系统！</h1>
+            </div>
+            <br>
+            <div class='form'>
+                <h1 id="title">登 录</h1>
+                <form action="/login" method="post">
+                    <div class="input"><input name="username" placeholder="用户名"></div>
+                    <div class="input" style="margin-top: 15px"><input name="password" placeholder="密码" type="password"></div>
+                    <div style="margin-top: 15px"><button type="submit" style="margin-right: 30px;">登录</button><button type="button" onclick="window.location.href='regist'">注册</button></div>
+                </form>
+                <div style="margin-top: 15px">{{ msg }}</div>
+            </div>
+            <div id="dev" style="color: white; font-size: 12px; margin-top: 550px;">
+                Developed by Zhangyanran
+            </div>
         </div>
     </body>
   

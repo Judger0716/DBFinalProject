@@ -11,7 +11,7 @@ mydb = mysql.connector.connect(
 )
 cursor = mydb.cursor()
 
-'''
+
 #插入管理员
 username='admin'
 password='admin'
@@ -21,7 +21,7 @@ print(str(hash.hexdigest()))
 sql=("insert into users (username,password,level) values ('%s', '%s', 1)" % (username, str(hash.hexdigest())))
 cursor.execute(sql)
 print(sql)
-'''
+
 
 #获得用户输入并插入表中，admin:admin
 print("Please input the user's information:")

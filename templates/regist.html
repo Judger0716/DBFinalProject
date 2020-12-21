@@ -2,16 +2,74 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <style>
+            .login{
+                position:fixed;
+                top: 0;
+                left: 0;
+                width:100%;
+                height:100%;
+                min-width: 1000px;
+                z-index:-10;
+                zoom: 1;
+                background-color: #fff;
+                background: url(static/login_bg.png);
+                background-repeat: no-repeat;
+                background-size: cover;
+                -webkit-background-size: cover;
+                -o-background-size: cover;
+                background-position: center 0;
+                text-align: center;
+            }
+            .form{
+                width: 400px;
+                height: 300px;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%,-50%);
+                text-align: center;
+                border-radius: 25px;
+                background-color: #fff;
+                opacity: 0.8; 
+                text-align: center;
+                vertical-align: middle;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            }
+            .input{
+                border-radius: 40px;
+            }
+            #goback{
+                color: aliceblue;
+                font-size: 24px;
+                margin-top: 250px;
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: auto;
+                text-align: center;
+            }
+        </style>
     </head>
 
     <body>
-        <div>Regist Interface：
-            <form action="/regist" method="post">
-                <p><input name="username"></p>
-                <p><input name="password" type="password"></p>
-                <p><button type="submit">注册</button></p>
-            </form>
+        <div class="login">
+            <div id="goback">
+                <a href="login">返回登录</a>
+            </div>
+            <br>
+            <div class='form'>
+                <h1 id="title">注 册</h1>
+                <form action="/regist" method="post">
+                    <div class="input"><input name="username" placeholder="用户名"></div>
+                    <div class="input" style="margin-top: 15px"><input name="password" placeholder="密码(长度不少于6位)" type="password"></div>
+                    <div style="margin-top: 15px"><button type="submit">注册</button></div>
+                </form>
+            </div>
+            <div id="dev" style="color: white; font-size: 12px; margin-top: 614px;">
+                Developed by Zhangyanran
+            </div>
         </div>
     </body>
+    
   
 </html>

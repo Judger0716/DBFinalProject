@@ -8,6 +8,8 @@ app = Flask(__name__)
 # 防止SQL注入过滤器
 def isValid(sql):
     init_len=len(sql)
+    if(init_len==0):
+        return False
     dirty_stuff = ["\"", "\\", "/", "*", "'", "=", "-", "#", ";", "<", ">", "+", "%", "$", "(", ")", "%", "@","!"]
     for stuff in dirty_stuff:
         sql = sql.replace(stuff, "")
@@ -26,7 +28,7 @@ def signin_form():
 # GET /login 同首页
 @app.route('/login',methods=['GET'])
 def sigin_interface():
-    return render_template('login.html',msg='请输入用户名和密码登录')
+    return render_template('login.html',msg='提示：请输入用户名和密码登录')
 
 
 # POST /login 尝试登录
@@ -52,14 +54,14 @@ def signin():
         cursor.execute(sql)
         print(sql)
     else:
-        return render_template('login.html',msg='用户名或密码不正确')
+        return render_template('login.html',msg='提示：用户名或密码不正确')
     values=cursor.fetchall()
 
     # 如果无此用户，则返回错误
     if(len(values)==0):
         mydb.commit()
         mydb.close()
-        return render_template('login.html',msg='无此用户')
+        return render_template('login.html',msg='提示：无此用户')
     user_class=values[0][1]
 
     # 管理员用户
@@ -79,7 +81,7 @@ def signin():
         return redirect(url_for('get_book',username=request.form['username']))
     mydb.commit()
     mydb.close()
-    return render_template('login.html',msg='用户名或密码不正确')
+    return render_template('login.html',msg='提示：用户名或密码不正确')
 
 
 # GET /regist 获得注册页面
@@ -115,6 +117,48 @@ def regist():
             return render_template('login.html',msg='注册失败')
     else:
         return render_template('login.html',msg='注册失败')
+
+# POST /getinfo 查看已注册的用户信息
+@app.route('/getinfo', methods=['POST'])
+def get_info(): 
+    response_object = {'status': 'success'}
+    post_data=request.get_json()
+    username=post_data.get('username')
+
+    # 连接数据库
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="guest",
+        passwd="guest",
+        database="bms"
+    )
+    cursor = mydb.cursor()
+
+    # 获得当前用户信息
+    sql='''
+        select * from users
+        where username like '{un}'
+        '''.format(un=username)
+    try:
+        cursor.execute(sql)
+        print(sql)
+        data=cursor.fetchone()
+        userinfo={}
+        userinfo['uid']=data[0]
+        userinfo['username']=data[1]
+        userinfo['credit']=data[3]
+        userinfo['balance']=data[4]
+        userinfo['borrownum']=data[5]
+        userinfo['level']=data[6]
+        response_object['userinfo']=userinfo
+        mydb.commit()
+        mydb.close()
+        return jsonify(response_object)
+    except:
+        mydb.commit()
+        mydb.close()
+        response_object['status']='failed'
+        return jsonify(response_object)
 
 # POST /chginfo 修改已注册的用户信息
 @app.route('/chginfo', methods=['POST'])
@@ -222,7 +266,7 @@ def search_book():
                 'bookname': sch_result[i][1],
                 'author': sch_result[i][2], 
                 'publisher': sch_result[i][3],
-                'publishdate': sch_result[i][4],
+                'publishdate': str(sch_result[i][4]),
                 'price': sch_result[i][5],
                 'storage': sch_result[i][6],
             })
@@ -310,17 +354,7 @@ def borrow_book():
         username=post_data.get('username')
         startdate=post_data.get('startdate')[:10]
         enddate=post_data.get('enddate')[:10]
-
-        # 如果借阅起始日期早于今日，不合法
-        now=datetime.date.today() # 当前时间
-        
-        # 为了测试数据库，这一要求可以暂时去掉
-        '''
-        sd=datetime.date(int(startdate[:4]),int(startdate[5:7]),int(startdate[8:10]))
-        if(sd<now):
-            response_object['status']='invalid_date'
-            return jsonify(response_object)
-        '''
+        now=datetime.date.today()
 
         # 更新用户的信誉分，存储过程实现
         sql='''
@@ -359,7 +393,6 @@ def borrow_book():
         
         # 信誉分低于60，拒绝借阅
         if(credit<60):
-            print("LOW CREDIT")
             response_object['status']='low_credit'
             return jsonify(response_object)
         
@@ -375,33 +408,15 @@ def borrow_book():
             return jsonify(response_object)
 
         # 添加借阅记录，更新库存以及书的已阅读字段，事务实现
-        sql='''
-            insert into borrow 
-            values ({_bookid},{_uid},'{sd}','{ed}',false,false)
-            '''.format(_bookid=bookid,_uid=uid,sd=startdate,ed=enddate)
         try:
-            cursor.execute(sql)
-            print(sql)
-            # 更新书籍的库存，阅读量
-            sql='''
-                update books
-                set storage=storage-1, readed=readed+1
-                where bookid={_bookid}
-                '''.format(_bookid=bookid)
-            cursor.execute(sql)
-            print(sql)
-            # 更新用户的借阅数量
-            sql='''
-                update users
-                set borrownum=borrownum+1
-                where uid={_uid}
-                '''.format(_uid=uid)
-            cursor.execute(sql)
-            print(sql)
+            cursor.callproc('add_borrow',(bookid,uid,startdate,enddate))
+            print("callproc add_borrow")
             mydb.commit()
             mydb.close()
             return jsonify(response_object)
         except:
+            mydb.rollback()
+            mydb.close()
             response_object['status']='borrow_failed'
             return jsonify(response_object)
     
@@ -470,8 +485,8 @@ def borrow_book():
                 BORROW_LIST.append({
                     'bookid': sch_result[i][0],
                     'bookname': sch_result[i][1],
-                    'startdate': sch_result[i][2], 
-                    'enddate': sch_result[i][3],
+                    'startdate': str(sch_result[i][2]), 
+                    'enddate': str(sch_result[i][3]),
                     'isstarted': isstarted,
                     'isexpired': sch_result[i][4],
                 })
@@ -507,33 +522,20 @@ def borrow_book():
         cursor.execute(sql)
         if(len(cursor.fetchall())>0):
             # 删除未开始的借阅记录（是否开始由isstarted和isexpired共同决定），事务实现
-            sql='''
-                delete from borrow
-                where bookid={bi} 
-                and uid in (select uid from users where username like '{un}')
-                '''.format(bi=bookid,un=username)
-            cursor.execute(sql)
-            print(sql)
             # 减少信誉分，已借阅数减少
-            sql='''
-                update users
-                set credit=credit-10, borrownum=borrownum-1
-                where username like '{un}'
-                '''.format(un=username)
-            cursor.execute(sql)
-            print(sql)
             # 减少阅读量,库存增加
-            sql='''
-                update books
-                set readed=readed-1,storage=storage+1
-                where bookid={bi}
-                '''.format(bi=bookid)
-            cursor.execute(sql)
-            print(sql)
-            mydb.commit()
-            mydb.close()
-            response_object['status']='recall_successfully'
-            return jsonify(response_object)
+            try:
+                cursor.callproc('recall_borrow',(bookid,username))
+                print("callproc recall_borrow")
+                mydb.commit()
+                mydb.close()
+                response_object['status']='recall_successfully'
+                return jsonify(response_object)
+            except:
+                mydb.rollback()
+                mydb.close()
+                response_object['status']='recall_failed'
+                return jsonify(response_object)
         else:
             response_object['status']='recall_failed'
             return jsonify(response_object)
@@ -630,36 +632,17 @@ def buy_book():
             return jsonify(response_object)
 
         # 添加购买记录，更新库存以及书的已购买字段，使用事务处理
-        now=datetime.date.today()
-        sql='''
-            insert into buy
-            values ({_bookid},{_uid},'{bd}',{p})
-            '''.format(_bookid=bookid,_uid=uid,bd=now,p=price)
         try:
-            cursor.execute(sql)
-            print(sql)
-            # 更新书籍的库存，销量
-            sql='''
-                update books
-                set storage=storage-1, purchased=purchased+1
-                where bookid={_bookid}
-                '''.format(_bookid=bookid)
-            cursor.execute(sql)
-            print(sql)
-            # 更新用户的余额与信誉分
-            sql='''
-                update users
-                set balance=balance-{p},credit=credit+10
-                where uid={_uid}
-                '''.format(p=price,_uid=uid)
-            cursor.execute(sql)
-            print(sql)
+            now=datetime.date.today()
+            cursor.callproc('add_buy',(bookid,uid,now,price))
+            print("callproc add_buy")
             mydb.commit()
             mydb.close()
             response_object['balance']=balance-price
             return jsonify(response_object)
-
         except:
+            mydb.rollback()
+            mydb.close()
             response_object['status']='buy_failed'
             return jsonify(response_object)
 
@@ -700,7 +683,7 @@ def buy_book():
                 BUY_LIST.append({
                     'bookid': sch_result[i][0],
                     'bookname': sch_result[i][1],
-                    'buydate': sch_result[i][2], 
+                    'buydate': str(sch_result[i][2]), 
                     'price': sch_result[i][3],
                 })
             mydb.commit()
@@ -758,57 +741,26 @@ def manage_book():
             cursor.execute(sql)
             print(sql)
             sch_result=cursor.fetchall()
+            now=datetime.date.today() # 当前时间
             for i in range(len(sch_result)):
+                if(now>=sch_result[i][4]):
+                    isstarted=True
+                else:
+                    isstarted=False
                 ALLUSRBL.append({
                     'bookid': sch_result[i][0],
                     'uid': sch_result[i][1],
                     'username': sch_result[i][2],
                     'bookname': sch_result[i][3],
-                    'startdate': sch_result[i][4], 
-                    'enddate': sch_result[i][5],
+                    'startdate': str(sch_result[i][4]), 
+                    'enddate': str(sch_result[i][5]),
                     'isexpired': sch_result[i][6],
                     'iscalculated': sch_result[i][7],
+                    'isstarted': isstarted,
                 })
             mydb.commit()
             mydb.close()
             response_object['allusrbl']=ALLUSRBL
-            return jsonify(response_object)
-        except:
-            mydb.commit()
-            mydb.close()
-            response_object['status']='failed'
-            return jsonify(response_object)
-    
-    # 续借一周
-    elif(message=='renew_borrow'):
-        bookid=post_data.get('bookid')
-        uid=post_data.get('uid')
-        now=datetime.date.today()
-        # 逾期/未开始，不能续借
-        sql='''
-            select startdate,isexpired
-            from borrow
-            where bookid={bi} and uid={ui}
-            '''.format(bi=bookid,ui=uid)
-        cursor.execute(sql)
-        print(sql)
-        data=cursor.fetchall()
-        sd=data[0][0]
-        isexp=data[0][1]
-        if(now<sd or isexp):
-            response_object['status']='failed'
-            return jsonify(response_object)
-        
-        sql='''
-            update borrow
-            set enddate=enddate+7
-            where uid={ui} and bookid={bi}
-            '''.format(ui=uid,bi=bookid)
-        try:
-            cursor.execute(sql)
-            print(sql)
-            mydb.commit()
-            mydb.close()
             return jsonify(response_object)
         except:
             mydb.commit()
@@ -838,33 +790,18 @@ def manage_book():
             cursor.callproc('minus_credit',(10,uid))
             mydb.commit()
 
-        # 删除借阅记录，事务完成
-        sql='''
-            delete from borrow
-            where bookid={bi} and uid={ui}
-            '''.format(bi=bookid,ui=uid)
-        cursor.execute(sql)
-        print(sql)    
-        # 更新用户借阅数量
-        sql='''
-            update users
-            set borrownum=borrownum-1
-            where uid={ui}
-            '''.format(ui=uid)
-        cursor.execute(sql)
-        print(sql)
-        # 更新库存
-        sql='''
-            update books
-            set storage=storage+1
-            where bookid={bi}
-            '''.format(bi=bookid)
-        cursor.execute(sql)
-        print(sql)
-
-        mydb.commit()
-        mydb.close()
-        return jsonify(response_object)
+        # 删除借阅记录，更新用户借阅数量，更新库存，事务完成
+        try:
+            cursor.callproc('delete_borrow',(bookid,uid))
+            print("callproc delete_borrow")
+            mydb.commit()
+            mydb.close()
+            return jsonify(response_object)
+        except:
+            mydb.rollback()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
 
     # 获得销售列表
     elif(message=='get_buylist'):
@@ -885,7 +822,7 @@ def manage_book():
                     'uid': sch_result[i][1],
                     'username': sch_result[i][2],
                     'bookname': sch_result[i][3],
-                    'buydate': sch_result[i][4], 
+                    'buydate': str(sch_result[i][4]), 
                     'price': sch_result[i][5],
                 })
             mydb.commit()
@@ -911,11 +848,12 @@ def manage_book():
             sch_result=cursor.fetchall()
             for i in range(len(sch_result)):
                 TOPSALE.append({
+                    'listindex': i+1,
                     'bookid': sch_result[i][0],
                     'bookname': sch_result[i][1],
                     'author': sch_result[i][2],
                     'publisher': sch_result[i][3],
-                    'publishdate': sch_result[i][4],
+                    'publishdate': str(sch_result[i][4]),
                     'price': sch_result[i][5],
                     'storage': sch_result[i][6],
                     'readed': sch_result[i][7],
@@ -1049,11 +987,12 @@ def top():
             sch_result=cursor.fetchall()
             for i in range(len(sch_result)):
                 TOPREADED.append({
+                    'listindex': i+1,
                     'bookid': sch_result[i][0],
                     'bookname': sch_result[i][1],
                     'author': sch_result[i][2],
                     'publisher': sch_result[i][3],
-                    'publishdate': sch_result[i][4],
+                    'publishdate': str(sch_result[i][4]),
                     'price': sch_result[i][5],
                     'storage': sch_result[i][6],
                     'readed': sch_result[i][7],
@@ -1134,7 +1073,7 @@ def comment():
                 COMMENTS.append({
                     'username': sch_result[i][0],
                     'content': sch_result[i][1],
-                    'cdate': sch_result[i][2],
+                    'cdate': str(sch_result[i][2]),
                 })
             mydb.commit()
             mydb.close()

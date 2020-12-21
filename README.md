@@ -19,8 +19,6 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 
 --Complete the book searching process.
 
-
-
 ## 2020/12/11 Updates
 
 ### The Front End
@@ -65,6 +63,22 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 
 --Divide all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
 
+## 2020/12/21 Updates
+
+### The Front End
+
+--Add background image for all interfaces. Adjust the location and size of all the windows.
+
+--Users can check their basic information now.
+
+--Logical bugs fixed.
+
+### The Back End
+
+--Add corresponding route for checking users' information.
+
+--Use MySQL transactions to replace some key operations, such as add/delete borrow/buy record.
+
 ## Reference Material
 
 [Flask和Vue.js构建全栈单页面web应用【通过Flask开发RESTful API】](https://zhuanlan.zhihu.com/p/76588212)
@@ -80,3 +94,5 @@ Developed by html, CSS(Element-UI), JavaScript (Using Vue framework) and python.
 [mysql.connector 事务总结](https://www.cnblogs.com/yaoyu126/p/6413638.html)
 
 [第三篇 Python关于mysql的API--pymysql模块， mysql事务](https://www.cnblogs.com/victorm/p/9695876.html)
+
+[el-table分页展示数据](https://blog.csdn.net/weixin_43412413/article/details/99696047)

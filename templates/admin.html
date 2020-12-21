@@ -10,42 +10,53 @@
         <script src="https://unpkg.com/axios@0.21.0/dist/axios.min.js"></script>
     </head>
 
-    <body>
-        <div><h1>欢迎进入图书管理系统：ADMIN</h1>
-        <form action="/" method="get">
-            <p><button type="submit">退出登录</button></p>
-        </form>
+    <body style="background-image:url(../static/admin_bg.jpg)">
+        <div style="margin-left: 2%;color: white; font-size: 20px; opacity: 0.8;"><h1>欢迎：管理员</h1></div>
 
         <!-- BMS主体 -->
-        <div id="book">
-
+        <div id="book" style="opacity: 0.9; margin-left: 2%; margin-right: 2%;">
+            <el-button type="info" @click="exitlogin()" round>退出登录</el-button>
             <el-tabs type="border-card" @tab-click="handleClick">
                 <!-- 图书查找 -->
                 <el-tab-pane label="图书管理">
-                    
-                    <el-button type="info" @click="search_book()" round>图 书 查 找</el-button>
                     <!-- 图书查找表单 -->
-                    <div>
-                        <el-input v-model="book_name" placeholder="书名"></el-input>
-                        <el-input v-model="book_author" placeholder="作者名"></el-input>
-                        <el-input v-model="book_publisher" placeholder="出版社名"></el-input>
-                    </div>
+                    <el-form ref="form" :model="search_form">
+                        <!-- 图书查找按钮 -->
+                        <el-col :span="3">
+                            <el-button type="info" @click="search_book()" round style="width: 200px;">点击查找/刷新</el-button>
+                        </el-col>
+                        <el-col :span="7">
+                            <el-form-item label="书名">
+                                <el-input v-model="search_form.book_name" style="width: 300px;"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="7">
+                            <el-form-item label="作者名">
+                                <el-input v-model="search_form.book_author" style="width: 300px;"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="7">
+                            <el-form-item label="出版社名">
+                                <el-input v-model="search_form.book_publisher" style="width: 300px;"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-form>
                     <br>
                     <!-- 查找结果 -->
                     <div v-if="statuscode>=1">
-                        <el-table :data="booklist" style="width: 100%" :row-class-name="book">
+                        <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%" :row-class-name="book">
                             <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
-                            <el-table-column prop="bookname" label="书名" width="350"></el-table-column>
-                            <el-table-column prop="author" label="作者" width="350"></el-table-column>
+                            <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
+                            <el-table-column prop="author" label="作者" width="400"></el-table-column>
                             <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
-                            <el-table-column prop="publishdate" label="出版日期" width="300"></el-table-column>
-                            <el-table-column prop="price" label="价格" width="80"></el-table-column>
-                            <el-table-column prop="storage" label="库存" width="50"></el-table-column>
+                            <el-table-column prop="publishdate" label="出版日期" width="150"></el-table-column>
+                            <el-table-column prop="price" label="价格" width="70"></el-table-column>
+                            <el-table-column prop="storage" label="库存" width="70"></el-table-column>
                             <!-- 管理员控制进货 -->
                             <el-table-column>
                                 <template slot-scope="scope">
                                     <el-button type="text" @click="stockdialogVisible = true;get_stock_bookid(scope.row)">进货</el-button>
-                                        <el-dialog title="图书进货表" :visible.sync="stockdialogVisible" width="30%">
+                                        <el-dialog title="图书进货表" :visible.sync="stockdialogVisible" width="30%" :append-to-body="true">
                                             <el-input v-model="stock_num"></el-input>
                                             <div slot="footer" class="dialog-footer">
                                                 <el-button @click="stockdialogVisible = false">取 消</el-button>
@@ -55,8 +66,18 @@
                                 </template>
                             </el-table-column>
                         </el-table>
+                        <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[10, 20, 30, 50, 100]"
+                            :page-size="pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="booklist.length">
+                        </el-pagination>
                     </div>
                 </el-tab-pane>
+
                 <!-- 借还书管理 -->
                 <el-tab-pane label="借还书管理" name='borrow'>
                     <template>
@@ -66,20 +87,29 @@
                             <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
                             <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
                             <el-table-column label="用户名" prop="username" width="200"></el-table-column>
-                            <el-table-column label="书名" prop="bookname" width="350"></el-table-column>
-                            <el-table-column label="起始日期" prop="startdate" width="350"></el-table-column>
-                            <el-table-column label="终止日期" prop="enddate" width="350"></el-table-column>
-                            <el-table-column label="是否逾期" prop="isexpired" width="50"></el-table-column>
-                            <el-table-column label="是否进行逾期统计" prop="iscalculated"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="500"></el-table-column>
+                            <el-table-column label="起始日期" prop="startdate" width="150"></el-table-column>
+                            <el-table-column label="终止日期" prop="enddate" width="150"></el-table-column>
+                            <el-table-column label="借阅状态" prop="isexpired" width="100">
+                                <template slot-scope="scope">
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==1" style="color: darkblue;">已逾期</p>
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==0">已开始</p>
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==0">未开始</p>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="是否进行逾期统计" prop="iscalculated" width="100">
+                                <template slot-scope="scope">
+                                    <p v-if="allusr_borrowlist[scope.$index].isexpired==1&&allusr_borrowlist[scope.$index].iscalculated==1" style="color: green; font-size: 18px;">√</p>
+                                    <p v-else-if="allusr_borrowlist[scope.$index].isexpired==1&&allusr_borrowlist[scope.$index].iscalculated==0" style="color: red; font-size: 18px;">×</p>
+                                    <p v-else style="font-size: 18px;">-</p>
+                                </template>
+                            </el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
                                     <el-button size="mini" @click="get_allusr_borrowlist()">刷新</el-button>
                                     <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索"/>
                                 </template>
                                 <template slot-scope="scope">
-                                    <el-button
-                                        size="mini"
-                                        @click="renew_borrow(scope.row)">续借</el-button>
                                     <el-button
                                         size="mini"
                                         type="danger"
@@ -90,12 +120,14 @@
                     </template>                      
                 </el-tab-pane>
 
+                <!-- 销售管理 -->
                 <el-tab-pane label="销售管理">
-                    <el-button size="mini" @click="get_buylist()">销售记录</el-button><el-button size="mini" @click="get_topsale()">畅销榜</el-button>    <el-popover
+                    <el-button size="mini" @click="get_buylist()" style="margin-left: 10px; display: inline;">销售记录</el-button><el-button size="mini" @click="get_topsale()" style="margin-left: 10px; display: inline;">畅销榜</el-button><el-popover
                         placement="top-start"
-                        width="100"
-                        trigger="click">
-                        <span>总销售额：{[all_profit]}￥</span>
+                        width="200"
+                        trigger="click"
+                        style="margin-left: 10px; display: inline;">
+                        <span>总销售额：{[all_profit]}（元）</span>
                         <el-button size="mini" slot="reference" @click="get_profit()">销售额统计</el-button>
                     </el-popover>
                     <template>
@@ -105,30 +137,32 @@
                             <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
                             <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
                             <el-table-column label="用户名" prop="username" width="200"></el-table-column>
-                            <el-table-column label="书名" prop="bookname" width="350"></el-table-column>
-                            <el-table-column label="购买日期" prop="buydate" width="350"></el-table-column>
-                            <el-table-column label="售价" prop="price" width="250"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="500"></el-table-column>
+                            <el-table-column label="购买日期" prop="buydate" width="150"></el-table-column>
+                            <el-table-column label="售价（元）" prop="price" width="150"></el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
                                     <el-button size="mini" @click="get_buylist()">刷新</el-button>
-                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索"/>
+                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索" style="width: 50%"/>
                                 </template>
                             </el-table-column>
                         </el-table>
                     </template> 
-                        <el-dialog title="图书畅销榜" :visible.sync="top_sale_visible" >
+                        <el-dialog title="图书畅销榜" :visible.sync="top_sale_visible" :append-to-body="true" width="75%">
                             <el-table :data="topsale">
-                                <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
-                                <el-table-column prop="bookname" label="书名" width="350"></el-table-column>
+                                <el-table-column prop="listindex" label="排名" width="50"></el-table-column>
+                                <el-table-column prop="bookid" label="书号" width="50"></el-table-column>
+                                <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
                                 <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
-                                <el-table-column prop="price" label="价格" width="80"></el-table-column>
-                                <el-table-column prop="storage" label="库存" width="50"></el-table-column>
-                                <el-table-column prop="readed" label="阅读量" width="50"></el-table-column>
+                                <el-table-column prop="price" label="价格" width="70"></el-table-column>
+                                <el-table-column prop="storage" label="库存" width="70"></el-table-column>
+                                <el-table-column prop="readed" label="阅读量" width="70"></el-table-column>
                                 <el-table-column prop="purchased" label="购买量"></el-table-column>
                             </el-table>
                         </el-dialog>
                 </el-tab-pane>
 
+                <!-- 用户管理 -->
                 <el-tab-pane label="账户管理" name='user'>
                     <template>
                         <el-table
@@ -138,9 +172,14 @@
                             <el-table-column label="用户名" prop="username" width="200"></el-table-column>
                             <el-table-column label="密码" prop="password" width="300"></el-table-column>
                             <el-table-column label="信誉分" prop="credit" width="200"></el-table-column>
-                            <el-table-column label="余额" prop="balance" width="200"></el-table-column>
-                            <el-table-column label="已借阅图书数目" prop="borrownum" width="200"></el-table-column>
-                            <el-table-column label="等级" prop="level" width="200"></el-table-column>
+                            <el-table-column label="余额（元）" prop="balance" width="200"></el-table-column>
+                            <el-table-column label="已借阅图书数目（本）" prop="borrownum" width="200"></el-table-column>
+                            <el-table-column label="等级" prop="level" width="200">
+                                <template slot-scope="scope">
+                                    <p v-if="usrlist[scope.$index].level==0">普通用户</p>
+                                    <p v-else>管理员</p>
+                                </template>
+                            </el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
                                     <el-button size="mini" @click="get_allusr()">刷新</el-button>
@@ -151,7 +190,7 @@
                                         size="mini"
                                         type="danger"
                                         @click="update_usr(scope.row)">更新用户信息</el-button>
-                                    <el-dialog title="用户信息表" :visible.sync="update_usr_visible" center>
+                                    <el-dialog title="用户信息表" :visible.sync="update_usr_visible" :append-to-body="true" center>
                                         <h3>用户信誉分：</h3>
                                         <el-input v-model="cur_usr.credit" placeholder="用户信誉分" auto-complete="on"></el-input> 
                                         <h3>用户余额：</h3>
@@ -176,10 +215,14 @@
             el: "#book",
             delimiters: ["{[", "]}"],
             data: {
-                book_name: '',
-                book_author: '',
-                book_publisher: '',
-                statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍 3-获得借阅记录
+                search_form:{
+                    book_name: '',
+                    book_author: '',
+                    book_publisher: '',
+                },
+                currentPage: 1, // 当前页
+                pageSize: 10, // 每页多少条
+                statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍
                 booklist: [],
                 stock_num: 0,
                 stock_book_id: 0,
@@ -200,6 +243,9 @@
                 },
             },
             methods: {
+                exitlogin() {
+                    window.location.href="http://127.0.0.1:5000/"
+                },
                 handleClick(tab, event) {
                     console.log(tab, event);
                     if(tab.name == 'borrow'){
@@ -212,9 +258,9 @@
                 // 查询书籍
                 search_book() {
                     axios.post('http://127.0.0.1:5000/book',{
-                        'bookname': this.book_name,
-                        'author': this.book_author,
-                        'publisher': this.book_publisher,
+                        'bookname': this.search_form.book_name,
+                        'author': this.search_form.book_author,
+                        'publisher': this.search_form.book_publisher,
                     })
                     .then(Response => {
                         console.log(Response['data']['status'])
@@ -226,6 +272,14 @@
                     .catch(function (error){
                         console.log(error);
                     })
+                },
+                // 每页多少条
+                handleSizeChange(val) {
+                    this.pageSize = val;
+                },
+                // 当前页
+                handleCurrentChange(val) {
+                    this.currentPage = val;
                 },
                 // 获取当前书的id
                 get_stock_bookid(row) {
@@ -276,35 +330,7 @@
                         console.log(error);
                     })
                 },
-                // 续借书籍，固定续借一周
-                renew_borrow(row) {
-                    console.log(row)
-                    axios.post('http://127.0.0.1:5000/admin',{
-                        'message': 'renew_borrow',
-                        'bookid': row.bookid,
-                        'uid': row.uid,
-                    })
-                    .then(Response => {
-                        console.log(Response['data']['status'])
-                        if(Response['data']['status']=='success'){
-                            this.$notify({
-                                title: '成功',
-                                message: '用户续借成功',
-                                type: 'success'
-                            });
-                        }
-                        else{
-                            this.$notify({
-                                title: '成功',
-                                message: '用户续借失败,请检查起始日期',
-                                type: 'success'
-                            });
-                        }
-                    })
-                    .catch(function (error){
-                        console.log(error);
-                    })
-                },
+                // 还书
                 return_book(row) {
                     console.log(row)
                     axios.post('http://127.0.0.1:5000/admin',{

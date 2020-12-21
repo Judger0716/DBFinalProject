@@ -11,7 +11,7 @@ cursor = mydb.cursor()
 sql='''create table users ( 
                             Uid int(4) primary key auto_increment,
                             Username varchar(40) unique not null,
-                            Password varchar(40) not null,
+                            Password varchar(40) check (length(Password)>6),
                             Credit int(4) default 100,
                             Balance double(10,2) default 0,
                             BorrowNum int(4) default 0,

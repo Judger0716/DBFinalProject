@@ -40,6 +40,53 @@ begin
     values (_bookid,_uid,_content,_cdate);
 end$$
 
-delimiter ;
+create procedure add_borrow(IN _bookid int(4),IN _uid int(4),IN _startdate date,IN _enddate date)
+begin
+    insert into borrow 
+    values (_bookid,_uid,_startdate,_enddate,false,false);
+    update books
+    set storage=storage-1, readed=readed+1
+    where bookid=_bookid;
+    update users
+    set borrownum=borrownum+1
+    where uid=_uid;
+end$$
 
-事务实现（行数）：377，509，632，841
+create procedure recall_borrow(IN _bookid int(4), IN _username varchar(40))
+begin
+    delete from borrow
+    where bookid=_bookid
+    and uid in (select uid from users where username like _username);
+    update users
+    set credit=credit-10, borrownum=borrownum-1
+    where username like _username;
+    update books
+    set readed=readed-1,storage=storage+1
+    where bookid=_bookid;
+end$$
+
+create procedure add_buy(IN _bookid int(4),IN _uid int(4),IN _buydate date,IN _price double(10,2))
+begin
+    insert into buy
+    values (_bookid,_uid,_buydate,_price);
+    update books
+    set storage=storage-1, purchased=purchased+1
+    where bookid=_bookid;
+    update users
+    set balance=balance-_price,credit=credit+10
+    where uid=_uid;
+end$$
+
+create procedure delete_borrow(IN _bookid int(4), IN _uid int(4))
+begin
+    delete from borrow
+    where bookid=_bookid and uid=_uid;
+    update users
+    set borrownum=borrownum-1
+    where uid=_uid;
+    update books
+    set storage=storage+1
+    where bookid=_bookid;
+end$$
+
+delimiter ;
