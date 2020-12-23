@@ -2,40 +2,68 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <!-- CDN INSTALL -->
         <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
-        <!-- 引入样式 -->
         <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
-        <!-- 引入组件库 -->
         <script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
         <script src="https://unpkg.com/axios@0.21.0/dist/axios.min.js"></script>
+        <!-- LOCAL INSTALL
+        <script src="../static/vue.js"></script>
+        <link rel="stylesheet" href="../static/index.css">
+        <script src="../static/index.js"></script>
+        <script src="../static/axios.min.js"></script>
+        -->
     </head>
 
     <body style="background-image:url(../static/admin_bg.jpg)">
         <div style="margin-left: 2%;color: white; font-size: 20px; opacity: 0.8;"><h1>欢迎：管理员</h1></div>
 
         <!-- BMS主体 -->
-        <div id="book" style="opacity: 0.9; margin-left: 2%; margin-right: 2%;">
-            <el-button type="info" @click="exitlogin()" round>退出登录</el-button>
+        <div id="book" style="opacity: 0.95; margin-left: 2%; margin-right: 2%;">
+            <el-button icon="el-icon-s-home" type="warning" @click="exitlogin()">退出登录</el-button>
+
             <el-tabs type="border-card" @tab-click="handleClick">
                 <!-- 图书查找 -->
                 <el-tab-pane label="图书管理">
                     <!-- 图书查找表单 -->
                     <el-form ref="form" :model="search_form">
-                        <!-- 图书查找按钮 -->
-                        <el-col :span="3">
-                            <el-button type="info" @click="search_book()" round style="width: 200px;">点击查找/刷新</el-button>
+                        <el-col :span="3"><!-- 新书进货按钮 -->
+                            <el-button icon="el-icon-circle-plus" type="primary" @click="stock_visible=true" round
+                            style="width: 200px; font-weight: 400; font-size: large;">进货新书</el-button>   
+                            <!-- 新书进货表单 -->
+                            <el-dialog title="新书信息表" :visible.sync="stock_visible" :append-to-body="true" center>
+                                <h3>书名：</h3>
+                                <el-input v-model="newbook_form.book_name" placeholder="书名"></el-input>
+                                <h3>作者：</h3>
+                                <el-input v-model="newbook_form.book_author" placeholder="作者名"></el-input> 
+                                <h3>出版社：</h3>
+                                <el-input v-model="newbook_form.book_publisher" placeholder="出版社名"></el-input> 
+                                <h3>出版日期（YYYY-MM-DD）：</h3>
+                                <el-input v-model="newbook_form.book_publishdate" placeholder="出版日期"></el-input> 
+                                <h3>售价：</h3>
+                                <el-input v-model="newbook_form.book_price" placeholder="售价"></el-input> 
+                                <h3>进书量：</h3>
+                                <el-input v-model="newbook_form.storage" placeholder="进书量"></el-input> 
+                                <span slot="footer" class="dialog-footer" center>
+                                    <el-button type="primary" @click="stock_visible = false;stock_book()">确 定</el-button>
+                                </span>
+                            </el-dialog>    
                         </el-col>
-                        <el-col :span="7">
+                        <el-col :span="3"><!-- 图书查找按钮 -->
+                            <el-button icon="el-icon-search" type="info" @click="search_book()" round
+                            style="width: 200px; font-weight: 400; font-size: large;">点击查找/刷新</el-button>
+                        </el-col>
+                        <el-col :span="6">
                             <el-form-item label="书名">
                                 <el-input v-model="search_form.book_name" style="width: 300px;"></el-input>
                             </el-form-item>
                         </el-col>
-                        <el-col :span="7">
+                        <el-col :span="6">
                             <el-form-item label="作者名">
                                 <el-input v-model="search_form.book_author" style="width: 300px;"></el-input>
                             </el-form-item>
                         </el-col>
-                        <el-col :span="7">
+                        <el-col :span="6">
                             <el-form-item label="出版社名">
                                 <el-input v-model="search_form.book_publisher" style="width: 300px;"></el-input>
                             </el-form-item>
@@ -44,23 +72,59 @@
                     <br>
                     <!-- 查找结果 -->
                     <div v-if="statuscode>=1">
-                        <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%" :row-class-name="book">
-                            <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
+                        <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%">
+                            <el-table-column prop="bookid" label="书号" width="50"></el-table-column>
                             <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
                             <el-table-column prop="author" label="作者" width="400"></el-table-column>
-                            <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
+                            <el-table-column prop="publisher" label="出版社" width="200"></el-table-column>
                             <el-table-column prop="publishdate" label="出版日期" width="150"></el-table-column>
-                            <el-table-column prop="price" label="价格" width="70"></el-table-column>
-                            <el-table-column prop="storage" label="库存" width="70"></el-table-column>
-                            <!-- 管理员控制进货 -->
+                            <el-table-column prop="price" label="价格" width="100"></el-table-column>
+                            <el-table-column prop="storage" label="库存" width="100"></el-table-column>
+                            <!-- 查看书评按钮 -->
+                            <el-table-column width="160">
+                                <template slot-scope="scope">
+                                    <el-button icon="el-icon-document-copy" size="mini" type="primary" @click="view_comment(scope.row)">查看/删除书评</el-button>
+                                    <el-dialog
+                                        title="已有评论（最近10条）"
+                                        :append-to-body="true"
+                                        :visible.sync="commentdialogVisible"
+                                        width="50%"
+                                        center>
+                                        <el-table :data="comment_list" style="width: 100%" :row-class-name="comment">
+                                            <el-table-column prop="username" label="用户名" width="100"></el-table-column>
+                                            <el-table-column prop="content" label="书评内容" width="500"></el-table-column>
+                                            <el-table-column prop="cdate" label="评论日期" width="150"></el-table-column>
+                                            <el-table-column>
+                                                <template slot-scope="scope">
+                                                    <el-button icon="el-icon-delete" type="mini" @click="delete_comment(scope.row)" style="font-weight: 500;">删除评论</el-button>
+                                                </template>
+                                            </el-table-column>
+                                        </el-table>
+                                        <span slot="footer" class="dialog-footer" center>
+                                            <el-button type="primary" @click="commentdialogVisible = false">确 定</el-button>
+                                        </span>
+                                    </el-dialog>
+                                </template>
+                            </el-table-column>
+                            <!-- 管理员控制进货=>修改图书基本信息 -->
                             <el-table-column>
                                 <template slot-scope="scope">
-                                    <el-button type="text" @click="stockdialogVisible = true;get_stock_bookid(scope.row)">进货</el-button>
-                                        <el-dialog title="图书进货表" :visible.sync="stockdialogVisible" width="30%" :append-to-body="true">
-                                            <el-input v-model="stock_num"></el-input>
+                                    <el-button icon="el-icon-info" size="mini" type="danger" @click="chgbookinfo_visible = true;get_bookinfo(scope.row)">修改图书信息</el-button>
+                                        <el-dialog title="图书信息表" :visible.sync="chgbookinfo_visible" width="50%" :append-to-body="true">
+                                            <h2 style="font-weight: 600; color: red;">修改后不可撤销，请谨慎修改！</h2>
+                                            <h3>书名：</h3>
+                                            <el-input v-model="chg_book_form.book_name" auto-complete="on" :disabled="false"></el-input>
+                                            <h3>出版社名：</h3>
+                                            <el-input v-model="chg_book_form.publisher" auto-complete="on" :disabled="true"></el-input>
+                                            <h3>出版日期：</h3>
+                                            <el-input v-model="chg_book_form.publishdate" auto-complete="on" :disabled="true"></el-input>             
+                                            <h3>售价：</h3>
+                                            <el-input v-model="chg_book_form.price" auto-complete="on"></el-input>                         
+                                            <h3>库存：</h3>
+                                            <el-input v-model="chg_book_form.stock_num" auto-complete="on"></el-input>
                                             <div slot="footer" class="dialog-footer">
-                                                <el-button @click="stockdialogVisible = false">取 消</el-button>
-                                                <el-button type="primary" @click="stockdialogVisible = false;stock_book()">确 定</el-button>
+                                                <el-button @click="chgbookinfo_visible = false">取 消</el-button>
+                                                <el-button type="primary" @click="chgbookinfo_visible = false;chg_bookinfo()">确 定</el-button>
                                             </div>
                                         </el-dialog>
                                 </template>
@@ -85,19 +149,20 @@
                           :data="allusr_borrowlist.filter(data => !search || data.bookname.toLowerCase().includes(search.toLowerCase()))"
                           style="width: 100%">
                             <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
-                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="100"></el-table-column>
                             <el-table-column label="用户名" prop="username" width="200"></el-table-column>
-                            <el-table-column label="书名" prop="bookname" width="500"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="400"></el-table-column>
                             <el-table-column label="起始日期" prop="startdate" width="150"></el-table-column>
                             <el-table-column label="终止日期" prop="enddate" width="150"></el-table-column>
+                            <el-table-column label="到期剩余时间（天）" prop="remain" width="150"></el-table-column>
                             <el-table-column label="借阅状态" prop="isexpired" width="100">
                                 <template slot-scope="scope">
-                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==1" style="color: darkblue;">已逾期</p>
-                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==0">已开始</p>
-                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==0">未开始</p>
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==1" style="color: red;">已逾期</p>
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==1&&allusr_borrowlist[scope.$index].isexpired==0" style="color: green;">已开始</p>
+                                    <p v-if="allusr_borrowlist[scope.$index].isstarted==0" style="color: blue;">未开始</p>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="是否进行逾期统计" prop="iscalculated" width="100">
+                            <el-table-column label="是否进行逾期统计" prop="iscalculated" width="200">
                                 <template slot-scope="scope">
                                     <p v-if="allusr_borrowlist[scope.$index].isexpired==1&&allusr_borrowlist[scope.$index].iscalculated==1" style="color: green; font-size: 18px;">√</p>
                                     <p v-else-if="allusr_borrowlist[scope.$index].isexpired==1&&allusr_borrowlist[scope.$index].iscalculated==0" style="color: red; font-size: 18px;">×</p>
@@ -106,11 +171,13 @@
                             </el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
-                                    <el-button size="mini" @click="get_allusr_borrowlist()">刷新</el-button>
-                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索"/>
+                                    <el-button icon="el-icon-refresh-right" size="mini" @click="get_allusr_borrowlist()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索" style="width: 200px;"/>
                                 </template>
                                 <template slot-scope="scope">
                                     <el-button
+                                        v-if="allusr_borrowlist[scope.$index].isstarted!=0"
+                                        icon="el-icon-s-management"
                                         size="mini"
                                         type="danger"
                                         @click="return_book(scope.row)">归还</el-button>
@@ -121,29 +188,33 @@
                 </el-tab-pane>
 
                 <!-- 销售管理 -->
-                <el-tab-pane label="销售管理">
-                    <el-button size="mini" @click="get_buylist()" style="margin-left: 10px; display: inline;">销售记录</el-button><el-button size="mini" @click="get_topsale()" style="margin-left: 10px; display: inline;">畅销榜</el-button><el-popover
+                <el-tab-pane label="销售管理" name="buy">
+                    <el-button icon="el-icon-star-on" type="success" size="small" @click="get_topsale()" style="margin-left: 10px; display: inline;">畅销榜</el-button><el-popover
                         placement="top-start"
                         width="200"
                         trigger="click"
                         style="margin-left: 10px; display: inline;">
                         <span>总销售额：{[all_profit]}（元）</span>
-                        <el-button size="mini" slot="reference" @click="get_profit()">销售额统计</el-button>
+                        <el-button icon="el-icon-s-data" size="small" type="primary" slot="reference" @click="get_profit()">销售额统计</el-button>
                     </el-popover>
                     <template>
                         <el-table
                           :data="buylist.filter(data => !search || data.bookname.toLowerCase().includes(search.toLowerCase()))"
                           style="width: 100%">
                             <el-table-column label="书号" prop="bookid" width="50"></el-table-column>
-                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
-                            <el-table-column label="用户名" prop="username" width="200"></el-table-column>
-                            <el-table-column label="书名" prop="bookname" width="500"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="100"></el-table-column>
+                            <el-table-column label="用户名" prop="username" width="100"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="300"></el-table-column>
+                            <el-table-column label="作者" prop="author" width="300"></el-table-column>
+                            <el-table-column label="出版社" prop="publisher" width="200"></el-table-column>
                             <el-table-column label="购买日期" prop="buydate" width="150"></el-table-column>
-                            <el-table-column label="售价（元）" prop="price" width="150"></el-table-column>
+                            <el-table-column label="原价（元）" prop="price" width="100"></el-table-column>
+                            <el-table-column label="折扣" prop="discount" width="70"></el-table-column>
+                            <el-table-column label="实际销售额（元）" prop="sale"></el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
-                                    <el-button size="mini" @click="get_buylist()">刷新</el-button>
-                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索" style="width: 50%"/>
+                                    <el-button icon="el-icon-refresh-right" size="mini" @click="get_buylist()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入书名关键字搜索" style="width: 150px;"/>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -152,7 +223,8 @@
                             <el-table :data="topsale">
                                 <el-table-column prop="listindex" label="排名" width="50"></el-table-column>
                                 <el-table-column prop="bookid" label="书号" width="50"></el-table-column>
-                                <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
+                                <el-table-column prop="bookname" label="书名" width="300"></el-table-column>
+                                <el-table-column prop="author" label="作者" width="300"></el-table-column>
                                 <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
                                 <el-table-column prop="price" label="价格" width="70"></el-table-column>
                                 <el-table-column prop="storage" label="库存" width="70"></el-table-column>
@@ -168,7 +240,7 @@
                         <el-table
                           :data="usrlist.filter(data => !search || data.username.toLowerCase().includes(search.toLowerCase()))"
                           style="width: 100%">
-                            <el-table-column label="用户ID" prop="uid" width="50"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="100"></el-table-column>
                             <el-table-column label="用户名" prop="username" width="200"></el-table-column>
                             <el-table-column label="密码" prop="password" width="300"></el-table-column>
                             <el-table-column label="信誉分" prop="credit" width="200"></el-table-column>
@@ -180,13 +252,20 @@
                                     <p v-else>管理员</p>
                                 </template>
                             </el-table-column>
+                            <el-table-column width="200">
+                                <template slot-scope="scope">
+                                    <el-button icon="el-icon-refresh" v-if="usrlist[scope.$index].level==0" size="mini" @click="reset_passwd(scope.row)">重置密码</el-button>
+                                </template>
+                            </el-table-column>
                             <el-table-column align="right">
                                 <template slot="header" slot-scope="scope">
-                                    <el-button size="mini" @click="get_allusr()">刷新</el-button>
+                                    <el-button icon="el-icon-refresh-right" size="mini" @click="get_allusr()">刷新</el-button>
                                     <el-input v-model="search" size="mini" placeholder="输入用户名关键字搜索"/>
                                 </template>
                                 <template slot-scope="scope">
                                     <el-button
+                                        v-if="usrlist[scope.$index].level==0"
+                                        icon="el-icon-info"
                                         size="mini"
                                         type="danger"
                                         @click="update_usr(scope.row)">更新用户信息</el-button>
@@ -206,6 +285,36 @@
                         </el-table>
                     </template> 
                 </el-tab-pane>
+
+                <!-- 评论管理 -->
+                <el-tab-pane label="评论管理" name='comment'>
+                    <template>
+                        <el-table
+                          :data="all_comment_list.filter(data => !search || comment_list.content.toLowerCase().includes(search.toLowerCase()))"
+                          style="width: 100%">
+                            <el-table-column label="评论ID" prop="cid" width="100"></el-table-column>
+                            <el-table-column label="书ID" prop="bookid" width="70"></el-table-column>
+                            <el-table-column label="书名" prop="bookname" width="200"></el-table-column>
+                            <el-table-column label="用户ID" prop="uid" width="100"></el-table-column>
+                            <el-table-column label="用户名" prop="username" width="200"></el-table-column>
+                            <el-table-column label="书评内容" prop="content" width="500"></el-table-column>
+                            <el-table-column label="评论日期" prop="cdate" width="150"></el-table-column>
+                            <el-table-column align="right">
+                                <template slot="header" slot-scope="scope">
+                                    <el-button icon="el-icon-refresh-right" size="mini" @click="get_all_comment()">刷新</el-button>
+                                    <el-input v-model="search" size="mini" placeholder="输入书评关键字搜索" style="width: 200px;"/>
+                                </template>
+                                <template slot-scope="scope">
+                                    <el-button
+                                        icon="el-icon-delete-solid"
+                                        size="mini"
+                                        type="danger"
+                                        @click="delete_comment(scope.row)">删除评论</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template> 
+                </el-tab-pane>
             </el-tabs>
         </div>
     </body>
@@ -215,37 +324,67 @@
             el: "#book",
             delimiters: ["{[", "]}"],
             data: {
+                search: '',  // 搜索框默认值
+                // 图书查询表单
                 search_form:{
                     book_name: '',
                     book_author: '',
                     book_publisher: '',
                 },
+                // 新书进货表单
+                newbook_form: {
+                    book_name: '',
+                    book_author: '',
+                    book_publisher: '',
+                    book_publishdate: '',
+                    book_price: 0,
+                    book_storage: 0,
+                },
+                stock_visible: false, // 进书对话框显示
                 currentPage: 1, // 当前页
                 pageSize: 10, // 每页多少条
                 statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍
-                booklist: [],
-                stock_num: 0,
-                stock_book_id: 0,
-                stockdialogVisible: false,
-                allusr_borrowlist: [],
-                search: '',
-                buylist: [],
-                topsale: [],
-                top_sale_visible: false,
-                all_profit: 0,
-                usrlist: [],
-                update_usr_visible: false, // 更新用户对话框
+                booklist: [],  // 返回的图书查询结果
+                // 修改书籍信息
+                chg_book_form: {
+                    book_id: 0,  // 书id
+                    book_name: '',  // 书名
+                    publisher: '',  // 出版社名
+                    publishdate: '',  // 出版日期
+                    price: 0,  // 售价
+                    stock_num: 0,  // 进书量
+                },
+                chgbookinfo_visible: false,  // 修改图书信息对话框显示
+                // 借还书管理
+                allusr_borrowlist: [],  // 返回的所有用户借阅记录
+                // 销售管理
+                buylist: [],  // 返回的所有用户购买记录
+                topsale: [],  // 返回的畅销榜
+                top_sale_visible: false,  // 畅销榜对话框显示
+                all_profit: 0,  // 返回的总销售额
+                // 用户管理
+                usrlist: [],  // 返回的用户列表
+                update_usr_visible: false, // 更新用户信息对话框显示
+                // 当前用户的基本信息
                 cur_usr: {
                     'uid': 0,
                     'credit': 0,
                     'balance': 0,
                     'level': 0,
                 },
+                commentdialogVisible: false, // 查看书评对话框显示
+                // 书评
+                comment: '',  // 书评内容
+                comment_bookid: 0,  // 评论的书id
+                comment_list: [],  // 返回的书评列表
+                all_comment_list: [], // 返回的全部书评列表
             },
             methods: {
+                // 退出登录
                 exitlogin() {
                     window.location.href="http://127.0.0.1:5000/"
                 },
+                // 选项卡选择
                 handleClick(tab, event) {
                     console.log(tab, event);
                     if(tab.name == 'borrow'){
@@ -253,6 +392,12 @@
                     }
                     else if(tab.name == 'user'){
                         this.get_allusr()
+                    }
+                    else if(tab.name == 'buy'){
+                        this.get_buylist()
+                    }
+                    else if(tab.name == 'comment'){
+                        this.get_all_comment()
                     }
                 },
                 // 查询书籍
@@ -281,33 +426,67 @@
                 handleCurrentChange(val) {
                     this.currentPage = val;
                 },
-                // 获取当前书的id
-                get_stock_bookid(row) {
-                    console.log(row.bookid)
-                    this.stock_book_id=row.bookid
-                },
-                // 添加库存
+                // 进货新书
                 stock_book() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'stock_book',
-                        'bookid': this.stock_book_id,
-                        'stock_num': this.stock_num,
+                        'bookname': this.newbook_form.book_name,
+                        'author': this.newbook_form.book_author,
+                        'publisher': this.newbook_form.book_publisher,
+                        'publishdate': this.newbook_form.book_publishdate,
+                        'price': this.newbook_form.book_price,
+                        'storage': this.newbook_form.book_storage,
                     })
                     .then(Response => {
                         console.log(Response['data']['status'])
                         if(Response['data']['status']=='success'){
-                            this.stock_book_id=0
-                            this.stock_num=0
                             this.$notify({
                                 title: '成功',
-                                message: '库存更新成功',
+                                message: '新书进货成功',
                                 type: 'success'
                             });
                         }
                         else{
                             this.$notify({
                                 title: '失败',
-                                message: '库存更新失败',
+                                message: '新书进货失败，请检查书籍信息',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 获取当前书目基本信息
+                get_bookinfo(row) {
+                    this.chg_book_form.book_id=row.bookid
+                    this.chg_book_form.book_name=row.bookname
+                    this.chg_book_form.publisher=row.publisher
+                    this.chg_book_form.publishdate=row.publishdate
+                    this.chg_book_form.price=row.price
+                },
+                // 修改书籍信息
+                chg_bookinfo() {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'chg_bookinfo',
+                        'bookid': this.chg_book_form.book_id,
+                        'price': this.chg_book_form.price,
+                        'stock_num': this.chg_book_form.stock_num,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.chg_book_form.stock_num=0
+                            this.$notify({
+                                title: '成功',
+                                message: '书籍信息更新成功',
+                                type: 'success'
+                            });
+                        }
+                        else{
+                            this.$notify({
+                                title: '失败',
+                                message: '书籍信息更新失败',
                             });
                         }
                     })
@@ -359,6 +538,7 @@
                         console.log(error);
                     })
                 },
+                // 获取全用户购买记录
                 get_buylist() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'get_buylist',
@@ -373,6 +553,7 @@
                         console.log(error);
                     })
                 },
+                // 获取畅销榜
                 get_topsale() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'get_topsale',
@@ -388,6 +569,7 @@
                         console.log(error);
                     })
                 },
+                // 获取总销售额
                 get_profit() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'get_profit',
@@ -402,6 +584,34 @@
                         console.log(error);
                     })
                 },
+                // 重置用户密码为000000
+                reset_passwd(row) {
+                    axios.post('http://127.0.0.1:5000/admin',{
+                        'message': 'reset_passwd',
+                        'uid': row.uid,
+                        'username': row.username,
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '用户密码重置成功',
+                                type: 'success',
+                            });
+                        }
+                        else{
+                            this.$notify.error({
+                                title: '失败',
+                                message: '用户密码重置失败',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 获取系统中所有用户的信息
                 get_allusr() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'get_allusr',
@@ -416,6 +626,7 @@
                         console.log(error);
                     })
                 },
+                // 请求更新用户信息，返回当前的信息
                 update_usr(row) {
                     this.cur_usr['uid']=row.uid
                     axios.post('http://127.0.0.1:5000/admin',{
@@ -442,6 +653,7 @@
                         console.log(error);
                     })
                 },
+                // 修改用户信息后确认修改
                 commit_update() {
                     axios.post('http://127.0.0.1:5000/admin',{
                         'message': 'commit_update',
@@ -456,12 +668,77 @@
                             this.$notify({
                                 title: '成功',
                                 message: '用户信息修改成功',
+                                type: 'success',
                             });
                         }
                         else{
                             this.$notify({
                                 title: '失败',
                                 message: '用户信息修改失败',
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 查看某书的书评
+                view_comment(row) {
+                    axios.post('http://127.0.0.1:5000/comment',{
+                        'message': 'view_comment',
+                        'bookid': row.bookid
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.comment_list=Response['data']['comment_list']
+                            this.commentdialogVisible=true
+                        }
+                        else{
+                            this.$notify.error({
+                                title: '失败',
+                                message: '查看书评失败'
+                            });
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 获得全部书评列表
+                get_all_comment() {
+                    axios.post('http://127.0.0.1:5000/comment',{
+                        'message': 'get_all_comment',
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.all_comment_list=Response['data']['all_comment_list']
+                        }
+                    })
+                    .catch(function (error){
+                        console.log(error);
+                    })
+                },
+                // 删除某条评论
+                delete_comment(row) {
+                    axios.post('http://127.0.0.1:5000/comment',{
+                        'message': 'delete_comment',
+                        'cid': row.cid
+                    })
+                    .then(Response => {
+                        console.log(Response['data']['status'])
+                        if(Response['data']['status']=='success'){
+                            this.$notify({
+                                title: '成功',
+                                message: '删除书评成功',
+                                type: 'success'
+                            });
+                        }
+                        else{
+                            this.$notify.error({
+                                title: '失败',
+                                message: '删除书评失败'
                             });
                         }
                     })

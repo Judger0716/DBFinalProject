@@ -13,7 +13,7 @@ mydb = mysql.connector.connect(
 )
 cursor = mydb.cursor()
 
-df=pd.read_excel('bookinfo.xlsx')
+df=pd.read_excel('db_manip/bookinfo.xlsx')
 book_sum=len(df.index.values)
 success=0
 error=0

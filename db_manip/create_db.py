@@ -47,6 +47,7 @@ sql='''create table buy (
                             Uid int(4),
                             BuyDate date not null,
                             Price double(10,2) not null,
+                            Discount double(10,2) default 1.00,
                             primary key (Uid, BookId),
                             foreign key (Uid) references Users(Uid),
                             foreign key (BookId) references Books(BookId)

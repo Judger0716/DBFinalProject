@@ -1,5 +1,6 @@
 delimiter $$
 
+// 记录逾期的借阅记录
 create procedure cal_expired(IN _bookid int(4),IN _uid int(4))
 begin
     update borrow
@@ -7,6 +8,7 @@ begin
     where bookid=_bookid and uid=_uid;
 end$$
 
+// 扣除_uid用户_minus的信誉分
 create procedure minus_credit(IN _minus int(4),IN _uid int(4))
 begin
     update users
@@ -14,19 +16,22 @@ begin
     where uid=_uid;
 end$$
 
-create procedure stock_book(IN _stock int(4),IN _bookid int(4))
+// 修改图书售价、库存基本信息
+create procedure chg_bookinfo(IN _bookid int(4),IN _stock int(4),IN _price double(10,2))
 begin
     update books
-    set storage=storage+_stock
+    set storage=storage+_stock, price=_price
     where bookid=_bookid;
 end$$
 
+ // 注册新用户
 create procedure add_usr(IN _username varchar(40),IN _password varchar(40))
 begin
     insert into users (username, password)
     values (_username,_password);
 end$$
 
+// 用户修改用户名和密码
 create procedure chg_passwd(IN _username varchar(40),IN _password varchar(40), IN _uid int(4))
 begin
     update users
@@ -34,12 +39,28 @@ begin
     where uid=_uid;
 end$$
 
+// 管理员修改用户信誉分、余额和等级
+create procedure update_usrinfo(IN _uid int(4),IN _credit int(4),IN _balance double(10,2),IN _level int(4))
+begin
+    if _credit<=10000 then
+        update users
+        set credit=_credit,balance=_balance,level=_level
+        where uid=_uid;
+    else
+        update users
+        set credit=10000,balance=_balance,level=_level
+        where uid=_uid;
+    end if;
+end$$
+
+// 添加书评
 create procedure add_comment(IN _bookid int(4),IN _uid int(4),IN _content varchar(200),IN _cdate date)
 begin
     insert into comment(bookid,uid,content,cdate)
     values (_bookid,_uid,_content,_cdate);
 end$$
 
+// 添加借阅记录
 create procedure add_borrow(IN _bookid int(4),IN _uid int(4),IN _startdate date,IN _enddate date)
 begin
     insert into borrow 
@@ -52,6 +73,7 @@ begin
     where uid=_uid;
 end$$
 
+ // 取消借阅
 create procedure recall_borrow(IN _bookid int(4), IN _username varchar(40))
 begin
     delete from borrow
@@ -65,18 +87,29 @@ begin
     where bookid=_bookid;
 end$$
 
-create procedure add_buy(IN _bookid int(4),IN _uid int(4),IN _buydate date,IN _price double(10,2))
+// 添加购买记录
+create procedure add_buy(IN _bookid int(4),IN _uid int(4),IN _buydate date,IN _price double(10,2), IN _discount double(10,2))
 begin
+    declare cur_credit int(4);
     insert into buy
-    values (_bookid,_uid,_buydate,_price);
+    values (_bookid,_uid,_buydate,_price,_discount);
     update books
     set storage=storage-1, purchased=purchased+1
     where bookid=_bookid;
-    update users
-    set balance=balance-_price,credit=credit+10
+    select credit into cur_credit from users
     where uid=_uid;
+    if cur_credit=10000 then
+        update users
+        set balance=balance-_price*_discount
+        where uid=_uid;
+    else
+        update users
+        set balance=balance-_price*_discount,credit=credit+10
+        where uid=_uid;
+    end if;
 end$$
 
+// 删除借阅记录（还书）
 create procedure delete_borrow(IN _bookid int(4), IN _uid int(4))
 begin
     delete from borrow
@@ -87,6 +120,13 @@ begin
     update books
     set storage=storage+1
     where bookid=_bookid;
+end$$
+
+// 进货新书
+create procedure stock_book(IN _bookname varchar(50), IN _author varchar(30), IN _publisher varchar(40), IN _publishdate date, IN _price double(10,2), IN _storage int(4))
+begin
+    insert into books(bookname,author,publisher,publishdate,price,storage)
+    values (_bookname,_author,_publisher,_publishdate,_price,_storage);
 end$$
 
 delimiter ;

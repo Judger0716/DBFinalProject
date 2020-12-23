@@ -1,43 +1,58 @@
 <!DOCTYPE html>
 <html>
+
     <head>
         <meta charset="UTF-8">
+        <!-- CDN INSTALL -->
         <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
-        <!-- 引入样式 -->
         <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
-        <!-- 引入组件库 -->
         <script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
         <script src="https://unpkg.com/axios@0.21.0/dist/axios.min.js"></script>
+        <!-- LOCAL INSTALL
+        <script src="../static/vue.js"></script>
+        <link rel="stylesheet" href="../static/index.css">
+        <script src="../static/index.js"></script>
+        <script src="../static/axios.min.js"></script>
+        -->
+        <!-- CSS -->
         <style>
             #welcome{
                 font-size: 20px;
                 color: white;
                 opacity: 0.8;
             }
-            #usrinfo{
+            .usrinfo{
                 font-size: 18px;
                 margin-top: 15px;
                 margin-bottom: 15px;
             }
+            .mbutton{
+                display: inline;
+            }
         </style>
     </head>
 
-    <body style="background-image:url(../static/main_bg.png)">
+    <body style="background-image:url(../static/main_bg.png)"><!-- body部分添加背景图片 -->
+
         <!-- 抬头欢迎提示 -->
         <div id="welcome" style="margin-left: 2%;">
             <h1 style="display: inline;">欢迎：</h1>
             <h1 style="display: inline;" id="cur_un">{{username}}</h1>
         </div>
 
-        <!-- 修改账户信息 -->
-        <div id="account" style="margin-left: 2%;margin-top: 20px;">
-            <el-button type="info" @click="infoFormVisible = true; get_userinfo()" round>查看账户信息</el-button><el-button type="info" @click="dialogFormVisible = true" round>修改账户信息</el-button><el-button type="info" @click="exitlogin()" round>退出登录</el-button>
+        <!-- 账户相关，由vue变量account控制 -->
+        <div id="account" style="margin-left: 2%; margin-top: 20px; font-size: 30px;">
+
+            <el-button class="mbutton" type="success" icon="el-icon-user-solid" @click="infoFormVisible = true; get_userinfo()">查看账户信息</el-button>
+            <el-button class="mbutton" type="primary" icon="el-icon-edit" @click="dialogFormVisible = true">修改账户信息</el-button>
+            <el-button class="mbutton" type="warning" icon="el-icon-s-home" @click="exitlogin()">退出登录</el-button>
             
             <!-- 查看个人信息 -->
             <el-dialog title="账户信息" :visible.sync="infoFormVisible" width="50%">
                 <div class="usrinfo">用户id：{[userinfo.uid]}</div>
                 <div class="usrinfo">用户名：{[userinfo.username]}</div>
                 <div class="usrinfo">信誉分：{[userinfo.credit]}</div>
+                <div class="usrinfo">当前享受折扣：{[10.0-userinfo.credit/1000.0]}（折）</div>
                 <div class="usrinfo">余额：{[userinfo.balance]}（元）</div>
                 <div class="usrinfo">已借阅数目：{[userinfo.borrownum]}（本）</div>
                 <div class="usrinfo" v-if="userinfo.level==0">等级：普通用户</div>
@@ -68,16 +83,19 @@
 
         </div>
 
-        <!-- BMS主体 -->
-        <div id="book" style="opacity: 0.9; margin-left: 2%; margin-right: 2%;">
+        <!-- BMS主体，留出两侧边距 -->
+        <div id="book" style="margin-left: 2%; margin-right: 2%;">
+
+            <!-- 选项卡样式 -->
             <el-tabs type="border-card" @tab-click="handleClick" style="opacity: 0.95;">
 
+                <!-- 图书查找 -->
                 <el-tab-pane label="图书查找" name="searchbook">
                     <!-- 图书查找表单 -->
                     <el-form ref="form" :model="search_form">
-                        <!-- 图书查找按钮 -->
-                        <el-col :span="3">
-                            <el-button type="info" @click="search_book()" round style="width: 200px;">点击查找/刷新</el-button>
+                        <el-col :span="3"><!-- 图书查找按钮 -->
+                            <el-button icon="el-icon-search" type="info" @click="search_book()" round 
+                            style="width: 200px; font-weight: 400; font-size: large;">点击查找/刷新</el-button>
                         </el-col>
                         <el-col :span="7">
                             <el-form-item label="书名">
@@ -95,21 +113,21 @@
                             </el-form-item>
                         </el-col>
                     </el-form>
-                    <br>
+
                     <!-- 查找结果 -->
                     <div v-if="statuscode>=1">
-                        <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%" :row-class-name="book">
-                            <el-table-column prop="bookid" label="书号" width="100"></el-table-column>
+                        <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%">
+                            <el-table-column prop="bookid" label="书号" width="50"></el-table-column>
                             <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
                             <el-table-column prop="author" label="作者" width="400"></el-table-column>
-                            <el-table-column prop="publisher" label="出版社" width="250"></el-table-column>
+                            <el-table-column prop="publisher" label="出版社" width="200"></el-table-column>
                             <el-table-column prop="publishdate" label="出版日期" width="150"></el-table-column>
-                            <el-table-column prop="price" label="价格（元）" width="70"></el-table-column>
-                            <el-table-column prop="storage" label="库存（本）" width="70"></el-table-column>
+                            <el-table-column prop="price" label="价格（元）" width="100"></el-table-column>
+                            <el-table-column prop="storage" label="库存（本）" width="100"></el-table-column>
                             <!-- 查看书评按钮 -->
                             <el-table-column width="100">
                                 <template slot-scope="scope">
-                                    <el-button type="text" @click="view_comment(scope.row)">查看书评</el-button>
+                                    <el-button icon="el-icon-document" type="text" @click="view_comment(scope.row)">查看书评</el-button>
                                     <el-dialog
                                         title="已有评论（最近10条）"
                                         :append-to-body="true"
@@ -128,19 +146,19 @@
                                 </template>
                             </el-table-column>
                             <!-- 借阅按钮 -->
-                            <el-table-column width="50">
+                            <el-table-column width="70">
                                 <template slot-scope="scope">
-                                    <el-button type="text" @click="borrow_book(scope.row)">借阅</el-button>
+                                    <el-button icon="el-icon-reading" type="text" @click="borrow_book(scope.row)">借阅</el-button>
                                         <el-dialog
                                             title="请选择借阅的起止日期"
                                             :append-to-body="true"
                                             :visible.sync="dialogVisible"
-                                            width="50%"
+                                            width="30%"
                                             center>
-                                            <div class="block" center>
-                                                <div class="demonstration" style="font-size: 16px;">选择日期后，点击“确定”完成借阅</div>
+                                            <div class="block" style="text-align: center;">
+                                                <div class="demonstration" style="font-size: 16px; text-align: center;">选择日期后，点击“确定”完成借阅</div>
                                                 <!-- 不能选择之前的日期，最多30天 -->
-                                                <div style="margin-top: 15px;">
+                                                <div style="margin-top: 15px; text-align: center;">
                                                     <el-date-picker
                                                         v-model="borrow_date"
                                                         type="daterange"
@@ -154,23 +172,26 @@
                                                 </div>
                                             </div>    
                                             <span slot="footer" class="dialog-footer" center>
-                                                <el-button @click="dialogVisible = false">取 消</el-button>
+                                                <el-button @click="dialogVisible = false; borrow_date=[]">取 消</el-button>
                                                 <el-button type="primary" @click="dialogVisible = false;commit_borrow()">确 定</el-button>
                                             </span>
                                         </el-dialog>
                                 </template>
                             </el-table-column>
+                            <!-- 购买按钮 -->
                             <el-table-column>
                                 <template slot-scope="scope">
-                                    <el-button type="text" @click="buy_book(scope.row)">购买</el-button>
+                                    <el-button icon="el-icon-shopping-cart-1" type="text" @click="buy_book(scope.row)">购买</el-button>
                                         <el-dialog
-                                        title="提示"
+                                        title="购买确认"
                                         :append-to-body="true"
                                         :visible.sync="buydialogVisible"
                                         width="30%"
                                         center>
-                                        <div style="font-size: 16px;">确认购买此书吗？</div>
-                                        <div style="color: red; font-size: 16px;">注意：购买完成后不可取消！</div>
+                                        <div style="font-size: 16px;">确认购买《{[buy_book_name]}》吗？</div>
+                                        <div style="font-size: 16px; margin-top: 10px;">您当前的折扣为: {[discount*10]} 折</div>
+                                        <div style="font-size: 16px;margin-top: 10px">折后价为：{[buy_book_price]} 元</div>
+                                        <div style="color: red; font-size: 18px; margin-top: 10px; font-weight: 500;">注意：购买完成后不可取消！</div>
                                         <span slot="footer" class="dialog-footer">
                                             <el-button @click="buydialogVisible = false">取 消</el-button>
                                             <el-button type="primary" @click="buydialogVisible = false;commit_buy()">确 定</el-button>
@@ -191,27 +212,29 @@
                     </div>
                 </el-tab-pane>
 
+                <!-- 查看已借阅/添加书评 -->
                 <el-tab-pane label="我的借阅/添加书评" name="myborrow">
                     <!-- 我的借阅 -->
                     <div>您的信誉分：{[credit]}</div>
-                    <el-table v-if="bldialogVisible==true" :data="borrowlist" style="width: 100%">
+                    <el-table :data="borrowlist" style="width: 100%">
                         <!-- 基本信息正常显示 -->
                         <el-table-column property="bookid" label="书号" width="100"></el-table-column>
                         <el-table-column property="bookname" label="书名" width="500"></el-table-column>
                         <el-table-column property="startdate" label="起始日期" width="150"></el-table-column>
                         <el-table-column property="enddate" label="终止日期" width="150"></el-table-column>
+                        <el-table-column property="remain" label="到期剩余时间（天）" width="150"></el-table-column>
                         <!-- 根据isStarted和isExpired判断 -->
                         <el-table-column label="状态" width="100">
                             <template slot-scope="scope">
-                                <p v-if="borrowlist[scope.$index].isstarted==1&&borrowlist[scope.$index].isexpired==1">已逾期</p>
-                                <p v-if="borrowlist[scope.$index].isstarted==1&&borrowlist[scope.$index].isexpired==0">已开始</p>
-                                <p v-if="borrowlist[scope.$index].isstarted==0">未开始</p>
+                                <p v-if="borrowlist[scope.$index].isstarted==1&&borrowlist[scope.$index].isexpired==1" style="color: red;">已逾期</p>
+                                <p v-if="borrowlist[scope.$index].isstarted==1&&borrowlist[scope.$index].isexpired==0" style="color: green;">已开始</p>
+                                <p v-if="borrowlist[scope.$index].isstarted==0" style="color: blue;">未开始</p>
                             </template>
                         </el-table-column>
                         <!-- 暂未开始借阅的才显示此按钮 -->
                         <el-table-column width="210">
                             <template slot-scope="scope">
-                                <el-button type="text" @click="recall_borrow(scope.row)"
+                                <el-button icon="el-icon-remove-outline" type="text" @click="recall_borrow(scope.row)"
                                 v-if="borrowlist[scope.$index].isstarted==0">
                                     取消借阅此书
                                 </el-button>
@@ -220,12 +243,13 @@
                         <!-- 正在阅读的书目才能添加书评 -->
                         <el-table-column>
                             <template slot-scope="scope">
-                                <el-button type="text" @click="dialogFormVisible=true;comment_bookid=scope.row.bookid"
+                                <el-button icon="el-icon-edit-outline" type="text" @click="dialogFormVisible=true;comment_bookid=scope.row.bookid"
                                 v-if="borrowlist[scope.$index].isstarted==1">
                                     添加书评
                                 </el-button>
-                                <el-dialog title="添加书评" :visible.sync="dialogFormVisible" :append-to-body="true">
-                                    <el-input v-model="comment" type="textarea" :rows="2" placeholder="请输入书评"></el-input>
+                                <el-dialog title="添加书评" :visible.sync="dialogFormVisible" :append-to-body="true" width="50%">
+                                    <h3>请文明发言：</h3>
+                                    <el-input v-model="comment" type="textarea" placeholder="请输入书评" maxlength="100" show-word-limit></el-input>
                                     <div slot="footer" class="dialog-footer">
                                         <el-button @click="dialogFormVisible = false">取 消</el-button>
                                         <el-button type="primary" @click="dialogFormVisible = false;book_comment()">确 定</el-button>
@@ -236,23 +260,29 @@
                     </el-table> 
                 </el-tab-pane>
 
+                <!-- 我的购买 -->
                 <el-tab-pane label="我的购买" name="mybuy">
-                    <!-- 我的购买 -->
-                    <div>您的余额：{[balance]}</div>
-                    <el-table v-if="byldialogVisible==true":data="buylist" style="width: 100%">
+                    <div style="margin-right: 10px;">您的余额：{[balance]}</div><div>您已消费：{[consume]}</div>
+                    <el-table :data="buylist" style="width: 100%">
                         <el-table-column property="bookid" label="书号" width="100"></el-table-column>
                         <el-table-column property="bookname" label="书名" width="500"></el-table-column>
+                        <el-table-column property="author" label="作者" width="400"></el-table-column>
+                        <el-table-column property="publisher" label="出版社" width="200"></el-table-column>
                         <el-table-column property="buydate" label="购买日期" width="150"></el-table-column>
-                        <el-table-column property="price" label="售价（元）"></el-table-column>
+                        <el-table-column property="price" label="原价（元）" width="150"></el-table-column>
+                        <el-table-column property="discount" label="折扣（折）" width="150"></el-table-column>
+                        <el-table-column property="after_price" label="折后价（元）"></el-table-column>
                     </el-table>    
                 </el-tab-pane>
 
+                <!-- 热书榜 -->
                 <el-tab-pane label="热书榜" name="topreaded">
-                    <!-- 热书榜 -->
-                    <el-table v-if="topreadedVisible==true" :data="topreadlist" style="width: 100%">
+                    <el-table :data="topreadlist" style="width: 100%">
                         <el-table-column property="listindex" label="排名" width="100"></el-table-column>
                         <el-table-column property="bookid" label="书号" width="100"></el-table-column>
                         <el-table-column property="bookname" label="书名" width="500"></el-table-column>
+                        <el-table-column property="author" label="作者" width="400"></el-table-column>
+                        <el-table-column property="publisher" label="出版社" width="200"></el-table-column>
                         <el-table-column property="price" label="售价（元）" width="200"></el-table-column>
                         <el-table-column property="readed" label="阅读量（人次）"></el-table-column>
                     </el-table>
@@ -263,25 +293,29 @@
     </body>
 
     <script>
+        // account变量专门处理与用户信息相关的操作
         var account = new Vue({
             el: "#account",
             delimiters: ["{[", "]}"],
             data: {
+                // 修改用户信息的表单
                 form:{
                     "before_username": document.getElementById("cur_un").innerHTML,
                     "before_password": '',
                     "after_username": '',
                     "after_password": ''
                 },
-                userinfo: {},
-                dialogFormVisible: false,
-                infoFormVisible: false,
+                userinfo: {}, // 当前用户信息
+                dialogFormVisible: false,  // 修改对话框
+                infoFormVisible: false,  // 查看用户信息对话框
                 formLabelWidth: '150px'
             },
             methods: {
+                // 退出登录，跳转
                 exitlogin() {
                     window.location.href="http://127.0.0.1:5000/"
                 },
+                // 获得当前用户信息
                 get_userinfo() {
                     axios.post('http://127.0.0.1:5000/getinfo',{
                         'username': document.getElementById("cur_un").innerHTML,
@@ -297,6 +331,7 @@
                         console.log(error);
                     })
                 },
+                // 改变用户信息
                 change_userinfo() {
                     axios.post('http://127.0.0.1:5000/chginfo',{
                         "before_username": this.form['before_username'],
@@ -329,7 +364,7 @@
                         else if(Response['data']['status']=='invalid_info'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '用户名或密码含有非法字符',
+                                message: '用户名或密码不合法',
                                 type: 'warning'
                             });
                         }
@@ -341,58 +376,76 @@
             }
         });
 
-
+        // 图书管理系统
         var bms = new Vue({
             el: "#book",
             // 如果不可避免的在同一个页面里既有 django 渲染又有 vue 渲染的部分，可采用 vue 的 delimiters 分隔符解决
             delimiters: ["{[", "]}"],
             data: {
-                username: document.getElementById("cur_un").innerHTML,
-                credit: 100,
-                balance: 0,
+                // 由于vue绑定的关系，这里重新获取当前用户信息
+                username: document.getElementById("cur_un").innerHTML,  // 用户名
+                credit: 100,  // 用户信誉分
+                discount: 1,  // 信誉分对应折扣
+                balance: 0,  // 用户余额
+                consume: 0,  // 用户消费额
+
+                // 图书查询
                 search_form:{
                     book_name: '',
                     book_author: '',
                     book_publisher: ''
                 },
-                currentPage: 1, // 当前页
-                pageSize: 10, // 每页多少条
+                currentPage: 1, // 查询结果当前页
+                pageSize: 10, // 查询结果每页多少条
+                dateRange: [],
                 statuscode: 0, // 0-初始 1-查询成功 2-可以借阅某本书籍 3-获得借阅记录
-                booklist: [],
-                borrow_book_id: 0,
-                borrow_date: [],
-                borrowlist: [],
+                booklist: [],  // 返回的查询结果
+
+                // 图书借阅
+                borrow_book_id: 0,  // 当前借阅的书id
+                borrow_date: [],  // 选择的借阅日期
+                borrowlist: [],  // 返回的我的借阅列表
+                // 日期选择器
+                pickerMinDate: '',
+                pickerOptions: {
+                    /*
+                    onPick: ({ maxDate, minDate}) => {
+                        this.pickerMinDate = minDate.getTime()
+                    },
+                    */
+                    // 限制不能选择今天之前的日期
+                    disabledDate: (time) => {
+                        let amonth = 45 * 24 * 3600 * 1000
+                        let minTime = Date.now() - 24 * 3600 * 1000
+                        /*
+                        if(minTime<this.pickerMinDate){
+                            minTime = this.pickerMinDate
+                        }
+                        */
+                        let maxTime = minTime + amonth
+                        return time.getTime() < minTime || time.getTime() > maxTime
+                    },
+                },
+
+                // 图书购买
+                buylist: [],  // 返回的我的购买列表
+                buy_book_id: 0,  // 当前购买的书id
+                buy_book_name: '',
+                buy_book_price: 0,
+                topreadlist: [],  // 返回的热书榜
+
+                // 书评
+                comment: '',  // 书评内容
+                comment_bookid: 0,  // 评论的书id
+                comment_list: [],  // 返回的书评列表
+
+                // 各类对话框的显示
                 dialogVisible: false,  // 借阅按钮对话框
                 bldialogVisible: false,  // 借阅列表对话框
                 dialogFormVisible: false, // 书评对话框
                 buydialogVisible: false, // 购买按钮对话框
-                byldialogVisible: false, // 购买列表对话框
-                topreadedVisible: false, // 热书榜对话框
                 commentdialogVisible: false, // 查看书评对话框
-                buylist: [],
-                buy_book_id: 0,
-                topreadlist: [],
-                comment: '',
-                comment_bookid: 0,
-                comment_list: [],
-                dateRange: [],
-                // 有小问题，选择今天之后的日期后不能再选择该日期之前的日期作为起始日期
-                pickerMinDate: '',
-                pickerOptions: {
-                    onPick: ({ maxDate, minDate}) => {
-                        this.pickerMinDate = minDate.getTime()
-                    },
-                    // 限制不能选择今天之前的日期
-                    disabledDate: (time) => {
-                        let amonth = 30 * 24 * 3600 * 1000
-                        let minTime = Date.now() - 24 * 3600 * 1000
-                        if(minTime<this.pickerMinDate){
-                            minTime=this.pickerMinDate
-                        }
-                        let maxTime = minTime + amonth
-                        return time.getTime() < minTime || time.getTime() > maxTime
-                    },
-                }
+
             },
             methods: {
                 // 菜单选择
@@ -476,6 +529,7 @@
                     .then(Response => {
                         console.log(Response['data']['status'])
                         this.credit=Response['data']['credit']
+                        this.borrow_date=[]
                         if(Response['data']['status']=='borrow_successfully'){
                             this.$notify({
                                 title: '成功',
@@ -517,6 +571,7 @@
                         console.log(error);
                     })
                 },
+                // 获取我的借阅
                 get_borrow_list() {
                     axios.post('http://127.0.0.1:5000/borrow',{
                         'message': 'get_borrow_list',
@@ -525,10 +580,8 @@
                     .then(Response => {
                         this.credit=Response['data']['credit']
                         console.log(Response['data']['status'])
-                        console.log(Response['data']['bl'])
                         if(Response['data']['status']=='get_borrow_list_successfully'){
                             this.borrowlist=Response['data']['bl']
-                            this.bldialogVisible=true;
                         }
                         else{
                             this.$notify.error({
@@ -541,6 +594,7 @@
                         console.log(error);
                     })
                 },
+                // 取消借阅
                 recall_borrow(row){
                     this.$confirm('将取消借阅本书?', '提示', {
                         confirmButtonText: '确定',
@@ -585,6 +639,9 @@
                         console.log(Response['data']['status'])
                         if(Response['data']['status']=='accept'){
                             this.buy_book_id=row.bookid
+                            this.discount=Response['data']['discount']
+                            this.buy_book_name=Response['data']['bookname']
+                            this.buy_book_price=Response['data']['realprice']
                             this.buydialogVisible=true
                         }
                         else if(Response['data']['status']=='no_storage'){
@@ -598,7 +655,7 @@
                         console.log(error);
                     })
                 },
-                // 确认借阅，服务器更新库存，记录借阅
+                // 确认购买，服务器更新库存，记录购买
                 commit_buy() {
                     axios.post('http://127.0.0.1:5000/buy',{
                         'message': 'commit_buy',
@@ -650,11 +707,11 @@
                     })
                     .then(Response => {
                         this.balance=Response['data']['balance']
+                        this.consume=Response['data']['consume']
                         console.log(Response['data']['status'])
                         console.log(Response['data']['byl'])
                         if(Response['data']['status']=='get_buy_list_successfully'){
                             this.buylist=Response['data']['byl']
-                            this.byldialogVisible=true;
                         }
                         else{
                             this.$notify.error({
@@ -676,7 +733,6 @@
                         console.log(Response['data']['status'])
                         if(Response['data']['status']=='success'){
                             this.topreadlist=Response['data']['topreaded']
-                            this.topreadedVisible=true;
                         }
                         else{
                             this.$notify.error({
@@ -689,6 +745,7 @@
                         console.log(error);
                     })
                 },
+                // 添加书评
                 book_comment() {
                     console.log(this.comment_bookid)
                     axios.post('http://127.0.0.1:5000/comment',{
@@ -705,6 +762,7 @@
                                 message: '添加书评成功',
                                 type: 'success'
                             });
+                            this.comment=''
                         }
                         else{
                             this.$notify.error({
@@ -717,6 +775,7 @@
                         console.log(error);
                     })
                 },
+                // 查看某书的书评
                 view_comment(row) {
                     axios.post('http://127.0.0.1:5000/comment',{
                         'message': 'view_comment',

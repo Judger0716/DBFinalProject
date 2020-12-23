@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, s
 import mysql.connector
 import hashlib
 import datetime
+import time
 
 app = Flask(__name__)
 
@@ -44,12 +45,13 @@ def signin():
     )
     cursor = mydb.cursor()
 
-    # 获得当前用户名对应的密码
+    # 获得当前用户名对应的密码，使用S锁，当用户修改用户名和密码时，不能使用原用户名和密码登录
     if(isValid(request.form['username'])):
         sql=('''
         select password,level
         from users
         where username='%s'
+        lock in share mode
         ''' % (request.form['username']))
         cursor.execute(sql)
         print(sql)
@@ -94,6 +96,8 @@ def regist_form():
 @app.route('/regist', methods=['POST'])
 def regist():
     if(isValid(request.form['username']) and isValid(request.form['password'])):
+        if(len(request.form['password'])<6):
+            return render_template('login.html',msg='注册失败，密码过短')
         # 连接数据库
         mydb = mysql.connector.connect(
             host="localhost",
@@ -134,10 +138,11 @@ def get_info():
     )
     cursor = mydb.cursor()
 
-    # 获得当前用户信息
+    # 获得当前用户信息，如果用户信息正在被修改，则应该得到修改后的信息
     sql='''
         select * from users
         where username like '{un}'
+        lock in share mode
         '''.format(un=username)
     try:
         cursor.execute(sql)
@@ -170,8 +175,8 @@ def change_info():
     after_username=post_data.get('after_username')
     after_password=post_data.get('after_password')
 
-    # 修改后的用户名和密码含有非法字符
-    if(not isValid(after_username) or not isValid(after_password)):
+    # 修改后的用户名和密码含有非法字符或密码长度小于6
+    if(not isValid(after_username) or not isValid(after_password) or len(after_password)<6):
         response_object['status']='invalid_info'
         return jsonify(response_object)
 
@@ -189,6 +194,7 @@ def change_info():
         select password,uid
         from users
         where username like '{un}'
+        lock in share mode
         '''.format(un=before_username)
     cursor.execute(sql)
     print(sql)
@@ -208,6 +214,8 @@ def change_info():
             # 合法，更新用户和密码
             cursor.callproc('chg_passwd',(after_username,new_passwd,current_uid))
             print("callproc chg_passwd")
+            #time.sleep(20)  # 测试锁
+            #print('awaken')
             mydb.commit()
             mydb.close()
             return jsonify(response_object)
@@ -300,10 +308,11 @@ def borrow_book():
         cursor = mydb.cursor()
         username = post_data.get('username')
         bookid = post_data.get('bookid')
-        # 检查该用户的已借阅数目
+        # 检查该用户的已借阅数目,如果用户正在还书，则应读取还书之后的数据
         sql='''
             select borrownum from users
             where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         borrow_num=cursor.fetchone()[0]
@@ -314,9 +323,11 @@ def borrow_book():
             mydb.close()
             return jsonify(response_object)
 
+        # 如果有其他用户还书，应当读取到还书后的库存
         sql='''
             select storage from books
             where bookid={bi}
+            lock in share mode
             '''.format(bi=bookid)
         try:
             cursor.execute(sql)
@@ -362,6 +373,7 @@ def borrow_book():
             from borrow,users
             where borrow.uid=users.uid and users.username='{un}'
             and iscalculated=false
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         print(sql)
@@ -383,6 +395,7 @@ def borrow_book():
         # 获取信誉分
         sql='''
             select uid, credit from users where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         print(sql)
@@ -400,6 +413,7 @@ def borrow_book():
         sql='''
             select bookid from borrow 
             where bookid={_bookid} and uid={_uid}
+            lock in share mode
             '''.format(_uid=uid,_bookid=bookid)
         cursor.execute(sql)
         print(sql)
@@ -439,6 +453,7 @@ def borrow_book():
             from borrow,users
             where borrow.uid=users.uid and users.username='{un}'
             and iscalculated=false
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         print(sql)
@@ -459,18 +474,22 @@ def borrow_book():
         # 获取信誉分
         sql='''
             select credit from users where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         data=cursor.fetchall()
         credit=data[0][0]
         response_object['credit']=credit
 
+        # 获取借阅列表，计算到期时间
         sql='''
-            select borrow.bookid, books.bookname, startdate, enddate, isexpired
+            select borrow.bookid, books.bookname, startdate, enddate, isexpired, datediff(enddate,CURDATE()) remain
             from borrow, books
             where borrow.bookid=books.bookid and borrow.uid in (
                 select uid from users where username like '{un}'
             )
+            order by remain
+            lock in share mode
             '''.format(un=username)
         try:
             cursor.execute(sql)
@@ -478,6 +497,7 @@ def borrow_book():
             sch_result=cursor.fetchall()
             now=datetime.date.today() # 当前时间
             for i in range(len(sch_result)):
+                # 计算借阅是否已经开始
                 if(now>=sch_result[i][2]):
                     isstarted=True
                 else:
@@ -487,6 +507,7 @@ def borrow_book():
                     'bookname': sch_result[i][1],
                     'startdate': str(sch_result[i][2]), 
                     'enddate': str(sch_result[i][3]),
+                    'remain': sch_result[i][5],
                     'isstarted': isstarted,
                     'isexpired': sch_result[i][4],
                 })
@@ -518,6 +539,7 @@ def borrow_book():
             select * from borrow
             where bookid={bi} 
             and uid in (select uid from users where username like '{un}')
+            lock in share mode
             '''.format(bi=bookid,un=username)
         cursor.execute(sql)
         if(len(cursor.fetchall())>0):
@@ -558,24 +580,42 @@ def buy_book():
         )
         cursor = mydb.cursor()
         bookid = post_data.get('bookid')
+        username=post_data.get('username')
         
         sql='''
-            select storage from books
+            select storage,bookname,price from books
             where bookid={bi}
+            lock in share mode
             '''.format(bi=bookid)
         try:
             cursor.execute(sql)
             print(sql)
-            sch_result=cursor.fetchone()
-            storage=sch_result[0]
-            mydb.commit()
-            mydb.close()
+            sch_result=cursor.fetchall()
+            storage=sch_result[0][0]
+            bookname=sch_result[0][1]
+            price=sch_result[0][2]
             # 如果库存为0，则不允许购买
             if(storage==0):
+                mydb.commit()
+                mydb.close()
                 response_object['status']='no_storage'
                 return jsonify(response_object)
             else:
-                # 否则告知客户端可以购买
+                # 否则告知客户端可以购买,更新前端信誉分
+                sql='''
+                    select credit from users
+                    where username like '{un}'
+                    lock in share mode
+                    '''.format(un=username)
+                cursor.execute(sql)
+                credit=cursor.fetchone()[0]
+                # 根据信誉分计算折扣discount
+                discount=1.00-float(credit)/10000.0
+                mydb.commit()
+                mydb.close()
+                response_object['discount']=round(discount,2)
+                response_object['bookname']=bookname
+                response_object['realprice']=round(price*discount,2)
                 response_object['status']='accept'
                 return jsonify(response_object)
         except:
@@ -596,27 +636,34 @@ def buy_book():
         bookid=post_data.get('bookid')
         username=post_data.get('username')
 
-        # 获取uid
+        # 获取uid，账户余额以及信誉分
         sql='''
-            select uid,balance from users where username like '{un}'
+            select uid,balance,credit from users where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         print(sql)
         data=cursor.fetchall()
         uid=data[0][0]
         balance=data[0][1]
+        credit=data[0][2]
 
-        # 获取书价
+        # 根据信誉分计算折扣discount
+        discount=1.00-float(credit)/10000.0
+
+        # 获取书价，并计算折扣后书价
         sql='''
             select price from books
             where bookid={bi}
+            lock in share mode
             '''.format(bi=bookid)
         cursor.execute(sql)
         print(sql)
         price=cursor.fetchone()[0]
+        final_price=price*discount
 
-        # 余额不足，拒绝
-        if(balance<price):
+        # 余额不足(小于折后书价)，拒绝
+        if(balance<final_price):
             response_object['status']='low_balance'
             return jsonify(response_object)
         
@@ -624,6 +671,7 @@ def buy_book():
         sql='''
             select bookid from buy
             where bookid={_bookid} and uid={_uid}
+            lock in share mode
             '''.format(_uid=uid,_bookid=bookid)
         cursor.execute(sql)
         print(sql)
@@ -631,14 +679,14 @@ def buy_book():
             response_object['status']='already_buyed'
             return jsonify(response_object)
 
-        # 添加购买记录，更新库存以及书的已购买字段，使用事务处理
+        # 添加购买记录，更新库存以及书的已购买字段，使用事务处理，如果信誉分达到上限，则不再增加
         try:
             now=datetime.date.today()
-            cursor.callproc('add_buy',(bookid,uid,now,price))
+            cursor.callproc('add_buy',(bookid,uid,now,price,round(discount,2)))
             print("callproc add_buy")
             mydb.commit()
             mydb.close()
-            response_object['balance']=balance-price
+            response_object['balance']=balance-final_price
             return jsonify(response_object)
         except:
             mydb.rollback()
@@ -656,39 +704,49 @@ def buy_book():
             database="bms"
         )
         cursor = mydb.cursor()
-        BUY_LIST=[]
+        BUY_LIST=[]  # 返回给前端的购买记录
         username=post_data.get('username')
 
         # 获取余额
         sql='''
             select balance from users where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         data=cursor.fetchall()
         balance=data[0][0]
         response_object['balance']=balance
 
+        # 获取购买记录
         sql='''
-            select buy.bookid, books.bookname, buy.buydate, buy.price
+            select buy.bookid, books.bookname, books.author, books.publisher, buy.buydate, buy.price, buy.discount
             from buy, books
             where buy.bookid=books.bookid and buy.uid in (
                 select uid from users where username like '{un}'
             )
+            lock in share mode
             '''.format(un=username)
         try:
             cursor.execute(sql)
             print(sql)
             sch_result=cursor.fetchall()
+            consume=0.00
             for i in range(len(sch_result)):
                 BUY_LIST.append({
                     'bookid': sch_result[i][0],
                     'bookname': sch_result[i][1],
-                    'buydate': str(sch_result[i][2]), 
-                    'price': sch_result[i][3],
+                    'author': sch_result[i][2],
+                    'publisher': sch_result[i][3],
+                    'buydate': str(sch_result[i][4]), 
+                    'price': sch_result[i][5],
+                    'discount': round(sch_result[i][6],2)*10,
+                    'after_price': round(sch_result[i][5]*sch_result[i][6],2),
                 })
+                consume=consume+round(sch_result[i][5]*sch_result[i][6],2)
             mydb.commit()
             mydb.close()
             response_object['byl']=BUY_LIST
+            response_object['consume']=round(consume,2)
             response_object['status']='get_buy_list_successfully'
             return jsonify(response_object)
         except:
@@ -699,7 +757,7 @@ def buy_book():
 
 #POST /admin 管理员操作
 @app.route('/admin', methods=['POST'])
-def manage_book():
+def manage():
     response_object = {'status': 'success'}
     # 连接数据库，使用root完成所有操作
     mydb = mysql.connector.connect(
@@ -713,12 +771,13 @@ def manage_book():
     message = post_data.get('message')
 
     # 更新库存
-    if(message=='stock_book'):
+    if(message=='chg_bookinfo'):
         bookid=post_data.get('bookid')
+        price=post_data.get('price')
         stock_num=post_data.get('stock_num')
         try:
-            cursor.callproc('stock_book',(stock_num,bookid))
-            print("callproc stock_book")
+            cursor.callproc('chg_bookinfo',(bookid,stock_num,price))
+            print("callproc chg_bookinfo")
             mydb.commit()
             mydb.close()
             return jsonify(response_object)
@@ -730,12 +789,14 @@ def manage_book():
     
     # 管理借阅
     elif(message=='get_allusr_borrowlist'):
+        # 原理与单个用户的借阅列表相同，只不过不再用uid的限制
         ALLUSRBL=[]
         sql='''
-            select borrow.bookid,borrow.uid,users.username,books.bookname,startdate,enddate,isexpired,iscalculated
+            select borrow.bookid,borrow.uid,users.username,books.bookname,startdate,enddate,isexpired,iscalculated, datediff(enddate,CURDATE()) remain
             from borrow,users,books
             where borrow.uid=users.uid and borrow.bookid=books.bookid
-            order by borrow.uid
+            order by remain
+            lock in share mode
             '''
         try:
             cursor.execute(sql)
@@ -757,6 +818,7 @@ def manage_book():
                     'isexpired': sch_result[i][6],
                     'iscalculated': sch_result[i][7],
                     'isstarted': isstarted,
+                    'remain': sch_result[i][8],
                 })
             mydb.commit()
             mydb.close()
@@ -777,6 +839,7 @@ def manage_book():
             select isexpired,iscalculated
             from borrow
             where bookid={bi} and uid={ui}
+            lock in share mode
             '''.format(bi=bookid,ui=uid)
         cursor.execute(sql)
         print(sql)
@@ -805,12 +868,14 @@ def manage_book():
 
     # 获得销售列表
     elif(message=='get_buylist'):
+        # 原理与单用户的购买列表相同，不再用uid限制
         BUYLIST=[]
         sql='''
-            select buy.bookid,buy.uid,users.username,books.bookname,buydate,buy.price
+            select buy.bookid,buy.uid,users.username,books.bookname,books.author,books.publisher,buydate,buy.price,buy.discount
             from buy,users,books
             where buy.uid=users.uid and buy.bookid=books.bookid
             order by buy.uid
+            lock in share mode
             '''
         try:
             cursor.execute(sql)
@@ -822,8 +887,12 @@ def manage_book():
                     'uid': sch_result[i][1],
                     'username': sch_result[i][2],
                     'bookname': sch_result[i][3],
-                    'buydate': str(sch_result[i][4]), 
-                    'price': sch_result[i][5],
+                    'author': sch_result[i][4],
+                    'publisher': sch_result[i][5],
+                    'buydate': str(sch_result[i][6]), 
+                    'price': sch_result[i][7],
+                    'discount': round(sch_result[i][8],2),
+                    'sale': round(sch_result[i][7]*sch_result[i][8],2),
                 })
             mydb.commit()
             mydb.close()
@@ -841,6 +910,7 @@ def manage_book():
             from books
             order by purchased desc
             limit 0,20
+            lock in share mode
             '''
         try:
             cursor.execute(sql)
@@ -872,8 +942,9 @@ def manage_book():
     # 统计销售额
     elif(message=='get_profit'):
         sql='''
-            select sum(price)
+            select sum(price*discount)
             from buy
+            lock in share mode
             '''
         cursor.execute(sql)
         print(sql)
@@ -889,6 +960,7 @@ def manage_book():
             select *
             from users
             order by uid
+            lock in share mode
             '''
         try:
             cursor.execute(sql)
@@ -921,6 +993,7 @@ def manage_book():
             select credit,balance,level
             from users
             where uid={ui}
+            lock in share mode
             '''.format(ui=uid)
         cursor.execute(sql)
         print(sql)
@@ -941,14 +1014,9 @@ def manage_book():
         credit=post_data.get('credit')
         balance=post_data.get('balance')
         level=post_data.get('level')
-        sql='''
-            update users
-            set credit={cd},balance={bl},level={lv}
-            where uid={ui}
-            '''.format(cd=credit,bl=balance,lv=level,ui=uid)
         try:
-            cursor.execute(sql)
-            print(sql)
+            cursor.callproc('update_usrinfo',(uid,credit,balance,level))
+            print('callproc update_usrinfo')
             mydb.commit()
             mydb.close()
             return jsonify(response_object)
@@ -957,8 +1025,51 @@ def manage_book():
             mydb.close()
             response_object['status']='failed'
             return jsonify(response_object)
+    
+    # 重置密码为000000
+    elif(message=='reset_passwd'):
+        uid=post_data.get('uid')
+        username=post_data.get('username')
+        raw_passwd='000000'
+        hash = hashlib.md5()
+        hash.update(bytes(username+raw_passwd, encoding='utf-8'))
+        try:
+            # 重置密码，调用修改密码过程
+            cursor.callproc('chg_passwd',(username,str(hash.hexdigest()),uid))
+            print("callproc chg_passwd")
+            mydb.commit()
+            mydb.close()
+            return jsonify(response_object)
+        except:
+            mydb.commit()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
+    
+    # 进货新书
+    elif(message=="stock_book"):
+        bookname=post_data.get('bookname')
+        author=post_data.get('author')
+        publisher=post_data.get('publisher')
+        publishdate=post_data.get('publishdate')
+        price=post_data.get('price')
+        storage=post_data.get('storage')
 
-# POST /top 获取热书榜
+        try:
+            cursor.callproc('stock_book',(bookname,author,publisher,publishdate,price,storage))
+            print('callproc stock_book')
+            mydb.commit()
+            mydb.close()
+            return jsonify(response_object)
+
+        except:
+            mydb.rollback()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
+
+
+# POST /top 获取榜单
 @app.route('/top', methods=['POST'])
 def top():
     response_object = {'status': 'success'}
@@ -973,6 +1084,7 @@ def top():
     post_data = request.get_json()
     message = post_data.get('message')
 
+    # 热书榜
     if(message=='top_readed'):
         TOPREADED=[]
         sql='''
@@ -980,6 +1092,7 @@ def top():
             from books
             order by readed desc
             limit 0,20
+            lock in share mode
             '''
         try:
             cursor.execute(sql)
@@ -1031,6 +1144,7 @@ def comment():
             select uid
             from users
             where username like '{un}'
+            lock in share mode
             '''.format(un=username)
         cursor.execute(sql)
         uid=cursor.fetchone()[0]
@@ -1058,12 +1172,13 @@ def comment():
         bookid=post_data.get('bookid')
         COMMENTS=[]
         sql='''
-            select users.username,content,cdate
+            select cid,users.username,content,cdate
             from comment,users
             where comment.uid=users.uid
             and comment.bookid={bi}
             order by cdate desc
             limit 0,10
+            lock in share mode
             '''.format(bi=bookid)
         try:
             cursor.execute(sql)
@@ -1071,9 +1186,10 @@ def comment():
             sch_result=cursor.fetchall()
             for i in range(len(sch_result)):
                 COMMENTS.append({
-                    'username': sch_result[i][0],
-                    'content': sch_result[i][1],
-                    'cdate': str(sch_result[i][2]),
+                    'cid': sch_result[i][0],
+                    'username': sch_result[i][1],
+                    'content': sch_result[i][2],
+                    'cdate': str(sch_result[i][3]),
                 })
             mydb.commit()
             mydb.close()
@@ -1085,6 +1201,73 @@ def comment():
             response_object['status']='failed'
             return jsonify(response_object)
 
+    elif(message=='delete_comment'):
+        # 删除书评，使用root
+        mydb = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="root",
+            database="bms"
+        )
+        cursor = mydb.cursor()
+        cid=post_data.get('cid')
+
+        try:
+            sql='''
+                delete from comment
+                where cid={ci}
+                '''.format(ci=cid)
+            cursor.execute(sql)
+            print(sql)
+            mydb.commit()
+            mydb.close()
+            return jsonify(response_object)
+        except:
+            mydb.commit()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
+
+    elif(message=='get_all_comment'):
+        # 获取全部书评，使用guest
+        mydb = mysql.connector.connect(
+            host="localhost",
+            user="guest",
+            passwd="guest",
+            database="bms"
+        )
+        cursor = mydb.cursor()
+
+        ALLCOMMENT=[]
+        sql='''
+            select cid, books.bookid, books.bookname, users.uid, users.username, content, cdate
+            from comment,users,books
+            where comment.uid=users.uid and comment.bookid=books.bookid
+            order by cdate desc, bookid
+            '''
+        try:
+            cursor.execute(sql)
+            print(sql)
+            sch_result=cursor.fetchall()
+            for i in range(len(sch_result)):
+                ALLCOMMENT.append({
+                    'cid': sch_result[i][0],
+                    'bookid': sch_result[i][1],
+                    'bookname': sch_result[i][2],
+                    'uid': sch_result[i][3],
+                    'username': sch_result[i][4],
+                    'content': sch_result[i][5],
+                    'cdate': str(sch_result[i][6]),
+                })
+            mydb.commit()
+            mydb.close()
+            response_object['all_comment_list']=ALLCOMMENT
+            return jsonify(response_object)
+        except:
+            mydb.commit()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
 
 if __name__ == '__main__':
     app.run()
