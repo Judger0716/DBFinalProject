@@ -38,13 +38,14 @@
                                 <el-input v-model="newbook_form.book_author" placeholder="作者名"></el-input> 
                                 <h3>出版社：</h3>
                                 <el-input v-model="newbook_form.book_publisher" placeholder="出版社名"></el-input> 
-                                <h3>出版日期（YYYY-MM-DD）：</h3>
+                                <h3>出版日期（年-月-日）：</h3>
                                 <el-input v-model="newbook_form.book_publishdate" placeholder="出版日期"></el-input> 
                                 <h3>售价：</h3>
                                 <el-input v-model="newbook_form.book_price" placeholder="售价"></el-input> 
                                 <h3>进书量：</h3>
                                 <el-input v-model="newbook_form.storage" placeholder="进书量"></el-input> 
                                 <span slot="footer" class="dialog-footer" center>
+                                    <el-button @click="stock_visible = false">取 消</el-button>
                                     <el-button type="primary" @click="stock_visible = false;stock_book()">确 定</el-button>
                                 </span>
                             </el-dialog>    
