@@ -803,9 +803,16 @@ def manage():
             print(sql)
             sch_result=cursor.fetchall()
             now=datetime.date.today() # 当前时间
+
+            # 对于每一条记录，在插入前需要进行过期检查
             for i in range(len(sch_result)):
+                # 标记借阅是否开始
                 if(now>=sch_result[i][4]):
                     isstarted=True
+                    # 只统计未计算逾期的借阅记录
+                    if(sch_result[i][5]<now and sch_result[i][7]==False):
+                        cursor.callproc('cal_expired',(sch_result[i][0],sch_result[i][1])) # 记录该逾期
+                        cursor.callproc('minus_credit',(10,sch_result[i][1])) # 更新用户的信誉分，存储过程实现
                 else:
                     isstarted=False
                 ALLUSRBL.append({

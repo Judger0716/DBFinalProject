@@ -10,131 +10,13 @@ Final Project of Database Course -- A book management system
 
 Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
-## 2020/12/6 Updates
+## 2020/12/25 Updates
 
 ### The Front End 前端
 
---完成了基本用户界面以及查询功能（不包括CSS部分）
+--修复了管理员界面无法正常显示借阅逾期的问题
 
---用户可以根据书名、作者和出版社信息对书籍进行查询
-
---Complete users' login interface and search interface without CSS.
-
---Users can search books by book name, author and publisher now.
-
-### The Back End 后端
-
---完成了用户登录、注册过程的前后端交互
-
---完成了书籍搜索功能
-
---Complete the interaction of login and register.
-
---Complete the book searching process.
-
-## 2020/12/11 Updates
-
-### The Front End 前端
-
---完成了用户修改个人信息的功能，用户现在可以修改他们的用户名和密码
-
---允许用户借阅书籍，查看他们的借阅信息以及取消未开始的借阅
-
---在HTML文档中添加了vue@2.6.12框架和element-ui@2.14.1组件（@版本号）
-
---Complete modification function for users, including modifying their usernames and passwords.
-
---Allow users to borrow books, check their list of borrowed books and cancel their choices.
-
---Combine vue@2.6.12 with Element-UI@2.14.1 (@version) in HTML documents.
-
-### The Back End 后端
-
---完成了用户信息的更新功能
-
---完成了图书资源和用户借阅列表的更新功能，并可以在用户操作后正确改变它们的值
-
---Complete the update process of user's information.
-
---Complete the update process of book resources and users' borrow lists, which will change correspondingly after user's operation.
-
-## 2020/12/17 Updates
-
-### The Front End 前端
-
---允许用户查看他们的购买列表
-
---允许用户对书籍进行评论，并查看该书籍的最近10条评论
-
---Allow users to check their buy list.
-
---Allow users to make comments on certain books and view top 10 comment on that book.
-
-#### Add user interface for admin 添加了管理员界面
-
---管理员可以查看数据库中所有图书的基本信息，也可以进货书籍（仅限旧书，即数据库中已有的书籍）
-
---管理员可以管理所有用户的借阅信息，并决定是否允许用户在借阅到期时续借，或者是处理用户的还书操作
-
---管理员可以查看所有用户的购买记录，统计总销售额
-
---管理员可以在后台修改用户的信誉分、余额和用户等级
-
---Admin can view all basic information of books in the database and stock old books.
-
---Admin can manage users' borrow list, deciding whether lengthen their borrowing period or not and deleting the borrow record when user return their books.
-
---Admin can view all the orders of buying book and the sum of sale.
-
---Admin can manage all users in the system by editing their credit, balance and level.
-
-### The Back End 后端
-
---完成了前端对应功能的处理逻辑
-
---用MySQL存储过程替换了insert, update和delete操作
-
---加入了函数防止SQL注入攻击
-
---将数据库的访问分为guest和root两种身份，增加安全性
-
---Complete all the functions corresponding to the newly appended operation of users.
-
---Use MySQL procedure to replace "insert", "update" and "delete" orders.
-
---Add prevention of MySQL injection.
-
---Divide all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
-
-## 2020/12/21 Updates
-
-### The Front End 前端
-
---在用户界面添加了背景图片，调整了窗口的位置
-
---删除了续借功能
-
---允许用户查看他们的基本信息，包括除密码密文外的信息
-
---修复了一些bug
-
---Add background image for all interfaces. Adjust the location and size of all the windows.
-
---Delete the function for admin to lengthen users' borrowing time.
-
---Users can check their basic information now.
-
---Logical bugs fixed.
-
-### The Back End 后端
-
---完成了前端对应功能的处理逻辑
-
---用MySQL事务替换了一些关键操作，例如添加/删除用户的借阅/购买记录
-
---Add corresponding route for checking users' information.
-
---Use MySQL transactions to replace some key operations, such as add/delete borrow/buy record.
+--Solve the problem that admin interface cannot display borrow record which is expired.
 
 ## 2020/12/23 Updates
 
@@ -189,6 +71,132 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 --Alter the SELECT query for getting borrow list, appending a new column about the remaining time user can keep that book.
 
 --Alter some procedures' definitions.
+
+## 2020/12/21 Updates
+
+### The Front End 前端
+
+--在用户界面添加了背景图片，调整了窗口的位置
+
+--删除了续借功能
+
+--允许用户查看他们的基本信息，包括除密码密文外的信息
+
+--修复了一些bug
+
+--Add background image for all interfaces. Adjust the location and size of all the windows.
+
+--Delete the function for admin to lengthen users' borrowing time.
+
+--Users can check their basic information now.
+
+--Logical bugs fixed.
+
+### The Back End 后端
+
+--完成了前端对应功能的处理逻辑
+
+--用MySQL事务替换了一些关键操作，例如添加/删除用户的借阅/购买记录
+
+--Add corresponding route for checking users' information.
+
+--Use MySQL transactions to replace some key operations, such as add/delete borrow/buy record.
+
+## 2020/12/17 Updates
+
+### The Front End 前端
+
+--允许用户查看他们的购买列表
+
+--允许用户对书籍进行评论，并查看该书籍的最近10条评论
+
+--Allow users to check their buy list.
+
+--Allow users to make comments on certain books and view top 10 comment on that book.
+
+#### Add user interface for admin 添加了管理员界面
+
+--管理员可以查看数据库中所有图书的基本信息，也可以进货书籍（仅限旧书，即数据库中已有的书籍）
+
+--管理员可以管理所有用户的借阅信息，并决定是否允许用户在借阅到期时续借，或者是处理用户的还书操作
+
+--管理员可以查看所有用户的购买记录，统计总销售额
+
+--管理员可以在后台修改用户的信誉分、余额和用户等级
+
+--Admin can view all basic information of books in the database and stock old books.
+
+--Admin can manage users' borrow list, deciding whether lengthen their borrowing period or not and deleting the borrow record when user return their books.
+
+--Admin can view all the orders of buying book and the sum of sale.
+
+--Admin can manage all users in the system by editing their credit, balance and level.
+
+### The Back End 后端
+
+--完成了前端对应功能的处理逻辑
+
+--用MySQL存储过程替换了insert, update和delete操作
+
+--加入了函数防止SQL注入攻击
+
+--将数据库的访问分为guest和root两种身份，增加安全性
+
+--Complete all the functions corresponding to the newly appended operation of users.
+
+--Use MySQL procedure to replace "insert", "update" and "delete" orders.
+
+--Add prevention of MySQL injection.
+
+--Divide all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
+
+## 2020/12/11 Updates
+
+### The Front End 前端
+
+--完成了用户修改个人信息的功能，用户现在可以修改他们的用户名和密码
+
+--允许用户借阅书籍，查看他们的借阅信息以及取消未开始的借阅
+
+--在HTML文档中添加了vue@2.6.12框架和element-ui@2.14.1组件（@版本号）
+
+--Complete modification function for users, including modifying their usernames and passwords.
+
+--Allow users to borrow books, check their list of borrowed books and cancel their choices.
+
+--Combine vue@2.6.12 with Element-UI@2.14.1 (@version) in HTML documents.
+
+### The Back End 后端
+
+--完成了用户信息的更新功能
+
+--完成了图书资源和用户借阅列表的更新功能，并可以在用户操作后正确改变它们的值
+
+--Complete the update process of user's information.
+
+--Complete the update process of book resources and users' borrow lists, which will change correspondingly after user's operation.
+
+## 2020/12/6 Updates
+
+### The Front End 前端
+
+--完成了基本用户界面以及查询功能（不包括CSS部分）
+
+--用户可以根据书名、作者和出版社信息对书籍进行查询
+
+--Complete users' login interface and search interface without CSS.
+
+--Users can search books by book name, author and publisher now.
+
+### The Back End 后端
+
+--完成了用户登录、注册过程的前后端交互
+
+--完成了书籍搜索功能
+
+--Complete the interaction of login and register.
+
+--Complete the book searching process.
 
 ## Reference Material 参考资料
 
