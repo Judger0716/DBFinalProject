@@ -275,9 +275,11 @@
                                         <el-input v-model="cur_usr.credit" placeholder="用户信誉分" auto-complete="on"></el-input> 
                                         <h3>用户余额：</h3>
                                         <el-input v-model="cur_usr.balance" placeholder="用户余额" auto-complete="on"></el-input>
-                                        <h3>用户等级(0为用户，1为管理员)：</h3>
-                                        <el-input v-model="cur_usr.level" placeholder="用户等级" auto-complete="on"></el-input>
+                                        <h3>用户等级：</h3>
+                                        <el-radio v-model="cur_usr.level" label="0">普通用户</el-radio>
+                                        <el-radio v-model="cur_usr.level" label="1">管理员</el-radio>
                                         <span slot="footer" class="dialog-footer" center>
+                                            <el-button @click="update_usr_visible = false">取 消</el-button>
                                             <el-button type="primary" @click="update_usr_visible = false;commit_update()">确 定</el-button>
                                         </span>
                                     </el-dialog> 

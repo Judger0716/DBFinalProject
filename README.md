@@ -10,6 +10,14 @@ Final Project of Database Course -- A book management system
 
 Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
+## 2020/12/26 Updates
+
+### The Front End 前端
+
+--为管理员修改用户信息对话框增加了取消按钮，用户等级由输入框改为了选择
+
+--Add CANCEL button to the dialog for admin to adjust users' information, change the input box of user level to radio box.
+
 ## 2020/12/25 Updates
 
 ### The Front End 前端
