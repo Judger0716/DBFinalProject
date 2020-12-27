@@ -118,9 +118,9 @@ def regist():
         except:
             mydb.commit()
             mydb.close()
-            return render_template('login.html',msg='注册失败')
+            return render_template('login.html',msg='注册失败，用户名已存在')
     else:
-        return render_template('login.html',msg='注册失败')
+        return render_template('login.html',msg='注册失败，非法用户名或密码')
 
 # POST /getinfo 查看已注册的用户信息
 @app.route('/getinfo', methods=['POST'])
@@ -872,6 +872,23 @@ def manage():
             mydb.close()
             response_object['status']='failed'
             return jsonify(response_object)
+
+    # 强制取消借阅
+    elif(message=='force_return'):
+        username=post_data.get('username')
+        bookid=post_data.get('bookid')
+        try:
+            cursor.callproc('recall_borrow',(bookid,username))
+            print('callproc recall_borrow')
+            mydb.commit()
+            mydb.close()
+            return jsonify(response_object)
+        except:
+            mydb.rollback()
+            mydb.close()
+            response_object['status']='failed'
+            return jsonify(response_object)
+
 
     # 获得销售列表
     elif(message=='get_buylist'):

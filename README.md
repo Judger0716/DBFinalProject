@@ -10,6 +10,40 @@ Final Project of Database Course -- A book management system
 
 Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
+## 2020/12/27 Updates
+
+### The Front End 前端
+
+--修改了图书查找界面的列宽，使五位数书号不再换行
+
+--修复了管理员按书评内容搜索时无法正确过滤的问题
+
+--为错误消息提示增加了图标
+
+--修复了管理员查看用户借阅记录按书名进行搜索后借阅状态显示不对的问题
+
+--对于未开始的借阅，为管理员添加了强制取消该借阅的功能
+
+--Alter the space between different columns in result table.
+
+--Solve the problem that admin can not search comments by their content.
+
+--Add icons to error messages.
+
+--Fix the bug that borrow status cannot be displayed correctly after admin search borrow record by book name.
+
+--For the borrow record which is not start, admin can cancel them now.
+
+### The Back End 后端
+
+--优化了注册界面注册失败后的提示信息
+
+--增加了对应强制取消借阅的处理逻辑
+
+--Adjsut the inform message when user fail to regist.
+
+--Add corresponding function to forced cancellation.
+
 ## 2020/12/26 Updates
 
 ### The Front End 前端

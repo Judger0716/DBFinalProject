@@ -117,7 +117,7 @@
                     <!-- 查找结果 -->
                     <div v-if="statuscode>=1">
                         <el-table :data="booklist.slice((currentPage-1)*pageSize,currentPage*pageSize)" style="width: 100%">
-                            <el-table-column prop="bookid" label="书号" width="50"></el-table-column>
+                            <el-table-column prop="bookid" label="书号" width="60"></el-table-column>
                             <el-table-column prop="bookname" label="书名" width="500"></el-table-column>
                             <el-table-column prop="author" label="作者" width="400"></el-table-column>
                             <el-table-column prop="publisher" label="出版社" width="200"></el-table-column>
@@ -352,13 +352,15 @@
                         else if(Response['data']['status']=='duplicated_username'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '用户名重复'
+                                message: '用户名重复',
+                                type: 'warning'
                             });
                         }
                         else if(Response['data']['status']=='incorrect_password'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '密码有误'
+                                message: '密码有误',
+                                type: 'warning'
                             });
                         }
                         else if(Response['data']['status']=='invalid_info'){
@@ -503,13 +505,15 @@
                         else if(Response['data']['status']=='no_storage'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '该书库存为零，不可借阅'
+                                message: '该书库存为零，不可借阅',
+                                type: 'warning'
                             });
                         }
                         else if(Response['data']['status']=='maximum_borrow_num'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '您已达到借阅书目上限，不可借阅'
+                                message: '您已达到借阅书目上限，不可借阅',
+                                type: 'warning'
                             });
                         }
                     })
@@ -542,6 +546,7 @@
                             this.$notify({
                                 title: '失败',
                                 message: '信誉分过低，请提高信誉分',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
@@ -549,6 +554,7 @@
                             this.$notify({
                                 title: '失败',
                                 message: '请选择今日之后的起止日期',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
@@ -556,13 +562,15 @@
                             this.$notify({
                                 title: '失败',
                                 message: '您已经借阅过本书，不能再次借阅',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
                         else if(Response['data']['status']=='borrow_failed'){
                             this.$notify.error({
                                 title: '失败',
-                                message: '借阅失败，请重新尝试'
+                                message: '借阅失败，请重新尝试',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
@@ -586,7 +594,8 @@
                         else{
                             this.$notify.error({
                                 title: '失败',
-                                message: '获取借阅列表失败'
+                                message: '获取借阅列表失败',
+                                type: 'warning'
                             });
                         }
                     })
@@ -647,7 +656,8 @@
                         else if(Response['data']['status']=='no_storage'){
                             this.$notify.error({
                                 title: '错误',
-                                message: '该书库存为零，不可购买'
+                                message: '该书库存为零，不可购买',
+                                type: 'warning'
                             });
                         }
                     })
@@ -677,6 +687,7 @@
                             this.$notify({
                                 title: '失败',
                                 message: '您已经购买过本书，不能再次购买',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
@@ -684,6 +695,7 @@
                             this.$notify({
                                 title: '失败',
                                 message: '您的账户余额不足',
+                                type: 'warning'
                             });
                             this.borrow_book_id=0
                         }
@@ -716,7 +728,8 @@
                         else{
                             this.$notify.error({
                                 title: '失败',
-                                message: '获取购买列表失败'
+                                message: '获取购买列表失败',
+                                type: 'warning'
                             });
                         }
                     })
@@ -737,7 +750,8 @@
                         else{
                             this.$notify.error({
                                 title: '失败',
-                                message: '获取热书列表失败'
+                                message: '获取热书列表失败',
+                                type: 'warning'
                             });
                         }
                     })
@@ -767,7 +781,8 @@
                         else{
                             this.$notify.error({
                                 title: '失败',
-                                message: '添加书评失败'
+                                message: '添加书评失败',
+                                type: 'warning'
                             });
                         }
                     })
@@ -790,7 +805,8 @@
                         else{
                             this.$notify.error({
                                 title: '失败',
-                                message: '查看书评失败'
+                                message: '查看书评失败',
+                                type: 'warning'
                             });
                         }
                     })
