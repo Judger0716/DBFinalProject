@@ -775,9 +775,13 @@ def manage():
         bookid=post_data.get('bookid')
         price=post_data.get('price')
         stock_num=post_data.get('stock_num')
+        print(bookid,price,stock_num)
         try:
             cursor.callproc('chg_bookinfo',(bookid,stock_num,price))
             print("callproc chg_bookinfo")
+            #print('sleep')
+            #time.sleep(15)
+            #print('awaken')
             mydb.commit()
             mydb.close()
             return jsonify(response_object)

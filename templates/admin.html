@@ -121,8 +121,8 @@
                                             <el-input v-model="chg_book_form.publishdate" auto-complete="on" :disabled="true"></el-input>             
                                             <h3>售价：</h3>
                                             <el-input v-model="chg_book_form.price" auto-complete="on"></el-input>                         
-                                            <h3>库存：</h3>
-                                            <el-input v-model="chg_book_form.stock_num" auto-complete="on"></el-input>
+                                            <h3>进书量：</h3>
+                                            <el-input v-model="chg_book_form.stock_num"></el-input>
                                             <div slot="footer" class="dialog-footer">
                                                 <el-button @click="chgbookinfo_visible = false">取 消</el-button>
                                                 <el-button type="primary" @click="chgbookinfo_visible = false;chg_bookinfo()">确 定</el-button>
