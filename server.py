@@ -95,6 +95,10 @@ def regist_form():
 # POST /regist 注册用户
 @app.route('/regist', methods=['POST'])
 def regist():
+    # 两次密码不一致
+    if(request.form['password']!=request.form['confirm']):
+        return render_template('login.html',msg='注册失败，两次密码不一致')
+    # 防止SQL注入
     if(isValid(request.form['username']) and isValid(request.form['password'])):
         if(len(request.form['password'])<6):
             return render_template('login.html',msg='注册失败，密码过短')
@@ -214,8 +218,6 @@ def change_info():
             # 合法，更新用户和密码
             cursor.callproc('chg_passwd',(after_username,new_passwd,current_uid))
             print("callproc chg_passwd")
-            #time.sleep(20)  # 测试锁
-            #print('awaken')
             mydb.commit()
             mydb.close()
             return jsonify(response_object)
@@ -775,7 +777,7 @@ def manage():
         bookid=post_data.get('bookid')
         price=post_data.get('price')
         stock_num=post_data.get('stock_num')
-        print(bookid,price,stock_num)
+        #print(bookid,price,stock_num)
         try:
             cursor.callproc('chg_bookinfo',(bookid,stock_num,price))
             print("callproc chg_bookinfo")

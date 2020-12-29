@@ -10,6 +10,96 @@ Final Project of Database Course -- A book management system
 
 Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
+## 项目结构 The Project Structure
+
+dbfinalproject
+
+│  procedure_defination  --MySQL存储过程定义
+
+│  server.py  --服务器主程序
+
+│
+
+└──db_manip  --数据库初始化脚本
+
+│  	│  bookinfo.xlsx  --图书信息
+
+│  	│  create_db.py  --创建数据库脚本
+
+│  	│  get_book_info.py  --当当网爬虫获取图书信息脚本
+
+│  	│  insert_book_info.py  --将图书信息插入数据库脚本
+
+│  	│  insert_user_info.py  --创建管理员用户脚本
+
+│  
+
+└──static  --静态资源
+
+│  	│  admin_bg.jpg  --管理员界面背景
+
+│  	│  login_bg.png  --登录/注册界面背景
+
+│  	│  main_bg.png  --主界面背景
+
+│  	│  vue.js  --vue@2.6.12对应js文件
+
+│  	│  index.css  --element-ui@2.14.1对应css文件
+
+│  	│  index.js  -- element-ui@2.14.1对应js文件
+
+│  	│  axios.min.js  --axios@0.21.0对应js文件
+
+│  
+
+└──templates  --html文件夹
+
+  	  │  login.html  --登录界面
+
+  	  │  regist.html  --注册界面
+
+  	  │  book.html  --用户主界面
+
+  	  │  admin.html  --管理员界面
+
+## 系统使用说明 System Instructions
+
+1. 安装MySQL及Python相关库，使用root账户创建数据库bms（在本系统中root密码为root）；
+
+   Install MySQL and Python related libraries, and create database BMS with root account (root password in this system is 'root'); 
+
+2. 使用***create_db.py***在bms数据库中建立关系模式；
+
+   Run ***create_db.py*** to establish tables in BMS database;
+
+3. 在MySQL中创建用户guest，密码设置为guest，对用户guest赋予bms中所有表的SELECT权限；
+
+   Create a user named "guest" in MySQL, set the password as "guest", and give the user "guest" the SELECT privilege of all tables in BMS;
+
+4. 接着用Python爬虫***get_bookinfo.py***从当当网获取图书数据，获得csv数据文件，用Excel转化为xlsx文件后，运行***insert_book_info.py***将图书信息导入到bms数据库中；
+
+   Then run ***get_bookinfo.py***, a Python crawler, was used to obtain book data and CSV data file from Dangdang.com. After CSV file was converted into XLSX file, ***insert_book_info.py*** was run to import book information into BMS database.
+
+5. 最后运行***insert_user_info.py***，插入管理员用户admin和指定的某一普通用户（需输入用户名和密码），即可完成系统的前期准备工作。之后运行***server.py***即可开始运行系统。
+
+   Finally, run ***insert_user_info.py***, insert administrator user "admin" and some ordinary user specified (user name and password need to be entered), and the preparatory work of the system can be completed. Then run ***server.py*** to start running the system.
+
+## 更新日志 Update Log 
+
+## 2020/12/29 Updates
+
+### The Front End 前端
+
+--注册界面添加了密码确认框
+
+--Added input box for password confirmation when registering.
+
+### The Back End 后端
+
+--添加了处理注册时两次密码不一致的逻辑
+
+--Added logic to handle two inconsistent passwords when registering.
+
 ## 2020/12/27 Updates
 
 ### The Front End 前端
@@ -24,13 +114,13 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --对于未开始的借阅，为管理员添加了强制取消该借阅的功能
 
---Alter the space between different columns in result table.
+--Modified the column width of the book search interface, so that the five-digit bookid no longer breaks a line
 
---Solve the problem that admin can not search comments by their content.
+--Fixed an issue where admin could not properly filter by book review content.
 
---Add icons to error messages.
+--Added icons for error messages.
 
---Fix the bug that borrow status cannot be displayed correctly after admin search borrow record by book name.
+--Fixed the problem that the admin checked the user's borrowing record and searched by title, and the borrowing status was not displayed correctly.
 
 --For the borrow record which is not start, admin can cancel them now.
 
@@ -40,9 +130,9 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --增加了对应强制取消借阅的处理逻辑
 
---Adjsut the inform message when user fail to regist.
+--Optimized the prompt message after registration failure.
 
---Add corresponding function to forced cancellation.
+--Added processing logic for mandatory cancellations.
 
 ## 2020/12/26 Updates
 
@@ -50,7 +140,7 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --为管理员修改用户信息对话框增加了取消按钮，用户等级由输入框改为了选择
 
---Add CANCEL button to the dialog for admin to adjust users' information, change the input box of user level to radio box.
+--Add CANCEL button to the dialog for admin to adjust users' information, change the input box of user level to selection box.
 
 ## 2020/12/25 Updates
 
@@ -58,7 +148,7 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --修复了管理员界面无法正常显示借阅逾期的问题
 
---Solve the problem that admin interface cannot display borrow record which is expired.
+--Fixed an issue where the admin interface could not properly display borrowing record which is expired.
 
 ## 2020/12/23 Updates
 
@@ -68,7 +158,7 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --优化了用户界面，调整了表格、按钮的间距，调整了字符的字体和颜色
 
---优化了日期选择器，允许用户在当日起的两个月范围内选择借阅起止日期
+--优化了日期选择器，允许用户在当日起的45天内选择借阅起止日期
 
 --用户现在可以在借阅列表中看到借阅的剩余时间
 
@@ -82,13 +172,13 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --加入了本地引入vue, element-ui和vue.axios的方式
 
---Add icon and style for all buttons.
+--Added icon and style for all buttons.
 
---Adjust the user interface, including adjusting the space between different columns in tables, the space between buttons and some font sizes and colors.
+--Optimized the user interface, adjusted the spacing of tables and buttons, adjusted the font and color of characters
 
---Adjust date-picker to allow users to choose dates in the period of two months.
+--Optimized the date selector, allowing users to select the borrowing start and end dates within 45 days from now.
 
---Users can now know how much longer they can keep the book.
+--Users can now see the rest of the borrowing time in their borrowing lists.
 
 --Add discount property which influence the buying process, now real price of a book depends on its initial price and the discount corresponding to users' credit.
 
@@ -98,7 +188,7 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --Admin can reset users' password when they forget.
 
---Add local method for installing Vue, Element-UI and vue.axios.
+--Added local method for installing Vue, Element-UI and vue.axios.
 
 ### The Back End 后端
 
@@ -108,11 +198,11 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --调整了一些存储过程的定义，新增了进货新书的存储过程
 
---Add corresponding route and methods for new functions mentioned above.
+--Completed the processing logic of the corresponding functions of the front end.
 
---Alter the SELECT query for getting borrow list, appending a new column about the remaining time user can keep that book.
+--Modified the SELECT query for getting borrow list, appending a new column about the remaining time user can keep that book.
 
---Alter some procedures' definitions.
+--Changed some procedures' definitions.
 
 ## 2020/12/21 Updates
 
@@ -126,13 +216,13 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --修复了一些bug
 
---Add background image for all interfaces. Adjust the location and size of all the windows.
+--Added a background image to the user interface and repositioned the window.
 
---Delete the function for admin to lengthen users' borrowing time.
+--The function of lengthening borrow time is deleted.
 
---Users can check their basic information now.
+--Allows users to view their basic information, including information other than password ciphertext.
 
---Logical bugs fixed.
+--Fixed some logical bugs.
 
 ### The Back End 后端
 
@@ -140,9 +230,9 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --用MySQL事务替换了一些关键操作，例如添加/删除用户的借阅/购买记录
 
---Add corresponding route for checking users' information.
+--Added corresponding route for checking users' information.
 
---Use MySQL transactions to replace some key operations, such as add/delete borrow/buy record.
+--Used MySQL transactions to replace some key operations, such as add/delete borrow/buy record.
 
 ## 2020/12/17 Updates
 
@@ -152,9 +242,9 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --允许用户对书籍进行评论，并查看该书籍的最近10条评论
 
---Allow users to check their buy list.
+--Allows users to check their buy list.
 
---Allow users to make comments on certain books and view top 10 comment on that book.
+--Allows users to make comments on certain books and view top 10 comment on that book.
 
 #### Add user interface for admin 添加了管理员界面
 
@@ -184,13 +274,13 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --将数据库的访问分为guest和root两种身份，增加安全性
 
---Complete all the functions corresponding to the newly appended operation of users.
+--Completed all the functions corresponding to the newly appended operation of users.
 
---Use MySQL procedure to replace "insert", "update" and "delete" orders.
+--Used MySQL procedure to replace "insert", "update" and "delete" orders.
 
---Add prevention of MySQL injection.
+--Added prevention of MySQL injection.
 
---Divide all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
+--Divided all functions into two groups for safety reasons, one using account "guest" for accessing the database and the other one using account "root" for accessing the database.
 
 ## 2020/12/11 Updates
 
@@ -202,11 +292,11 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --在HTML文档中添加了vue@2.6.12框架和element-ui@2.14.1组件（@版本号）
 
---Complete modification function for users, including modifying their usernames and passwords.
+--Completed modification function for users, including modifying their usernames and passwords.
 
---Allow users to borrow books, check their list of borrowed books and cancel their choices.
+--Allowed users to borrow books, check their list of borrowed books and cancel their choices.
 
---Combine vue@2.6.12 with Element-UI@2.14.1 (@version) in HTML documents.
+--Combined vue@2.6.12 with Element-UI@2.14.1 (@version) in HTML documents.
 
 ### The Back End 后端
 
@@ -214,9 +304,9 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --完成了图书资源和用户借阅列表的更新功能，并可以在用户操作后正确改变它们的值
 
---Complete the update process of user's information.
+--Completed the update process of user's information.
 
---Complete the update process of book resources and users' borrow lists, which will change correspondingly after user's operation.
+--Completed the update process of book resources and users' borrow lists, which will change correspondingly after user's operation.
 
 ## 2020/12/6 Updates
 
@@ -226,7 +316,7 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --用户可以根据书名、作者和出版社信息对书籍进行查询
 
---Complete users' login interface and search interface without CSS.
+--Completed users' login interface and search interface without CSS.
 
 --Users can search books by book name, author and publisher now.
 
@@ -236,9 +326,9 @@ Developed by html(Element-UI), CSS, JavaScript (Using Vue framework) and python.
 
 --完成了书籍搜索功能
 
---Complete the interaction of login and register.
+--Completed the interaction of login and register.
 
---Complete the book searching process.
+--Completed the book searching process.
 
 ## Reference Material 参考资料
 
